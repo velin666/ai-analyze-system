@@ -93,3 +93,41 @@ export interface AnalysisRequest {
   filename: string
   type: string
 }
+
+export interface LogEntry {
+  id: string
+  level: 'error' | 'warn' | 'info' | 'debug'
+  message: string
+  timestamp: string
+  service?: string
+  userId?: string
+  requestId?: string
+  duration?: number
+  ip?: string
+  userAgent?: string
+  method?: string
+  url?: string
+  statusCode?: number
+  error?: {
+    name: string
+    message: string
+    stack?: string
+  }
+  metadata?: Record<string, any>
+}
+
+export interface LogFilter {
+  level?: string[]
+  service?: string
+  startDate?: string
+  endDate?: string
+  search?: string
+  limit?: number
+  offset?: number
+}
+
+export interface LogResponse {
+  logs: LogEntry[]
+  total: number
+  hasMore: boolean
+}
