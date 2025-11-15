@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  ssr: false,
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
@@ -29,6 +30,9 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
+    prerender: {
+      routes: ['/']
+    },
     experimental: {
       wasm: true
     }
