@@ -1,1 +1,0 @@
-import{D as o,q as a}from"./266V56LC.js";const n=o((e,r)=>{{const t=localStorage.getItem("user");if(!t&&e.path!=="/login")return a("/login");if(t&&e.path==="/login")return a("/")}});export{n as default};
