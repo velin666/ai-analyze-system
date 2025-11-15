@@ -1,1 +1,0 @@
-import{D as o,q as a}from"./BYZ7d_d4.js";const n=o((e,r)=>{{const t=localStorage.getItem("user");if(!t&&e.path!=="/login")return a("/login");if(t&&e.path==="/login")return a("/")}});export{n as default};
