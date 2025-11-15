@@ -1,6 +1,6 @@
 <template>
   <div class="http404-container">
-    <img src="/404_images/404_logo.png" alt="" class="logo" />
+    <!-- <img src="/404_images/404_logo.png" alt="" class="logo" /> -->
     <div class="http404">
       <p class="main-text">404！你来错地方了</p>
       <p class="sub-text">请确认当前页面是否存在，点击下方按钮回到主页</p>
