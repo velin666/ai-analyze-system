@@ -25,6 +25,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     deepseekApiKey: process.env.DEEPSEEK_API_KEY,
     deepseekApiUrl: process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1/chat/completions',
+    cozeApiKey: process.env.COZE_API_KEY,
+    cozeApiUrl: process.env.COZE_API_URL || 'https://api.coze.cn/v1/workflow/run',
+    cozeWorkflowId: process.env.COZE_WORKFLOW_ID,
     public: {
       appName: '工地资料管理系统'
     }
