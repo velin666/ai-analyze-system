@@ -7,12 +7,12 @@ module.exports = {
       exec_mode: 'cluster',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 5500,
         DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 5500
       },
       error_file: './logs/err.log',
       out_file: './logs/out.log',
