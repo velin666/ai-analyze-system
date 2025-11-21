@@ -5,15 +5,27 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- 左侧：Logo和导航 -->
-          <div class="flex items-center space-x-8">
+          <div class="flex items-center space-x-4 md:space-x-8">
+            <!-- 汉堡菜单按钮（移动端） -->
+            <button
+              @click="showMobileMenu = !showMobileMenu"
+              class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="菜单"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="!showMobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+
             <!-- Logo -->
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 md:space-x-3">
               <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
               </div>
-              <h1 class="text-lg font-bold text-gray-900">工地资料管理系统</h1>
+              <h1 class="text-base md:text-lg font-bold text-gray-900 hidden sm:block">工地资料管理系统</h1>
             </div>
 
             <!-- 主导航 -->
@@ -76,11 +88,11 @@
           </div>
 
           <!-- 右侧：用户信息和操作 -->
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2 md:space-x-4">
             <!-- 主题切换 -->
             <button
               @click="toggleTheme"
-              class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              class="hidden sm:flex p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
               title="切换主题"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,13 +104,13 @@
             <div class="relative" ref="userMenuRef">
               <button
                 @click="showUserMenu = !showUserMenu"
-                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                class="flex items-center space-x-1 sm:space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                   <span class="text-white text-sm font-medium">{{ user?.name?.charAt(0) || 'D' }}</span>
                 </div>
                 <span class="hidden sm:block text-sm font-medium text-gray-700">{{ user?.name || 'demo' }}</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="hidden sm:block w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
               </button>
@@ -157,7 +169,15 @@
     </header>
 
     <!-- 移动端导航菜单 -->
-    <div v-if="showMobileMenu" class="md:hidden bg-white border-b border-gray-200">
+    <transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0 -translate-y-1"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-1"
+    >
+      <div v-if="showMobileMenu" class="md:hidden bg-white border-b border-gray-200 shadow-sm">
       <div class="px-4 py-2 space-y-1">
         <NuxtLink
           to="/"
@@ -203,8 +223,20 @@
           </svg>
           AI文档分析
         </NuxtLink>
+        <NuxtLink
+          to="/system/logs"
+          class="flex items-center px-3 py-2 rounded-lg text-sm font-medium"
+          :class="$route.path.startsWith('/system/logs') ? 'bg-blue-100 text-blue-700' : 'text-gray-600'"
+          @click="showMobileMenu = false"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          系统日志
+        </NuxtLink>
       </div>
     </div>
+    </transition>
 
     <!-- 主内容区 -->
     <main class="flex-1">
