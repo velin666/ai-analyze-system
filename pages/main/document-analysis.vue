@@ -252,23 +252,36 @@
                 v-if="isTestingConversion"
                 class="p-4 bg-purple-50 rounded-lg"
               >
-                <div class="flex items-center space-x-2 text-purple-700">
-                  <svg
-                    class="w-5 h-5 animate-spin"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  <span class="text-sm font-medium">{{
-                    conversionStatus
-                  }}</span>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2 text-purple-700">
+                      <svg
+                        class="w-5 h-5 animate-spin"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      <span class="text-sm font-medium">{{
+                        conversionStatus
+                      }}</span>
+                    </div>
+                    <span class="text-sm font-semibold text-purple-700"
+                      >{{ Math.round(conversionProgress) }}%</span
+                    >
+                  </div>
+                  <div class="w-full bg-purple-200 rounded-full h-2">
+                    <div
+                      class="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-300"
+                      :style="{ width: `${conversionProgress}%` }"
+                    ></div>
+                  </div>
                 </div>
               </div>
 
@@ -329,6 +342,46 @@
                       </button>
                     </div>
                     <div
+                      v-if="conversionResult.format === 'xml' || conversionResult.format === 'xml-formatted'"
+                      class="mb-3"
+                    >
+                      <button
+                        @click="callCozeWorkflow"
+                        :disabled="isCallingWorkflow"
+                        class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                      >
+                        <svg
+                          v-if="!isCallingWorkflow"
+                          class="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                        <svg
+                          v-else
+                          class="w-4 h-4 mr-2 animate-spin"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        {{ isCallingWorkflow ? '正在调用Coze Workflow...' : '调用Coze Workflow分析' }}
+                      </button>
+                    </div>
+                    <div
                       class="bg-white border border-green-200 rounded p-3 max-h-96 overflow-auto"
                     >
                       <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{
@@ -363,6 +416,60 @@
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Workflow调用结果 -->
+                <div
+                  v-if="workflowResult"
+                  class="mt-4 p-4 border-2 border-blue-200 rounded-lg"
+                  :class="{
+                    'bg-blue-50': workflowResult.success,
+                    'bg-red-50': !workflowResult.success
+                  }"
+                >
+                  <div class="flex items-center space-x-2 mb-3">
+                    <svg
+                      v-if="workflowResult.success"
+                      class="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <svg
+                      v-else
+                      class="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span class="text-sm font-semibold" :class="{
+                      'text-blue-800': workflowResult.success,
+                      'text-red-800': !workflowResult.success
+                    }">Workflow {{ workflowResult.success ? '调用成功' : '调用失败' }}</span>
+                  </div>
+                  <div
+                    class="bg-white border rounded p-3 max-h-64 overflow-auto"
+                    :class="{
+                      'border-blue-200': workflowResult.success,
+                      'border-red-200': !workflowResult.success
+                    }"
+                  >
+                    <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{ formatWorkflowResult(workflowResult) }}</pre>
                   </div>
                 </div>
 
@@ -817,6 +924,8 @@
 </template>
 
 <script setup lang="ts">
+  import { CozeAPI } from '@coze/api'
+
   // 页面标题
   definePageMeta({
     title: 'AI文档分析',
@@ -834,8 +943,13 @@
   // DOCX转XML测试相关
   const isTestingConversion = ref(false)
   const conversionStatus = ref('')
+  const conversionProgress = ref(0)
   const conversionResult = ref<any>(null)
   const uploadedFileId = ref<string>('')
+  
+  // Coze workflow调用相关
+  const isCallingWorkflow = ref(false)
+  const workflowResult = ref<any>(null)
 
   // 计算属性
   const canAnalyze = computed(() => {
@@ -996,11 +1110,15 @@
     if (!selectedFile.value || !isDocxFile.value) return
 
     isTestingConversion.value = true
-    conversionStatus.value = '正在上传文件...'
+    conversionStatus.value = '正在准备...'
+    conversionProgress.value = 0
     conversionResult.value = null
 
     try {
       // 1. 上传文件
+      conversionStatus.value = '正在上传文件...'
+      conversionProgress.value = 10
+      
       const formData = new FormData()
       formData.append('file', selectedFile.value)
 
@@ -1010,7 +1128,15 @@
       })
 
       uploadedFileId.value = (uploadResponse as any).id
+      conversionProgress.value = 40
       conversionStatus.value = `正在转换为${format}格式...`
+
+      // 模拟转换进度
+      const progressInterval = setInterval(() => {
+        if (conversionProgress.value < 90) {
+          conversionProgress.value += 5
+        }
+      }, 200)
 
       // 2. 转换文件
       const convertResponse = await $fetch('/api/files/convert-docx', {
@@ -1021,8 +1147,13 @@
         },
       })
 
-      conversionResult.value = convertResponse
+      clearInterval(progressInterval)
+      conversionProgress.value = 100
       conversionStatus.value = '转换完成'
+      conversionResult.value = convertResponse
+      
+      // 延迟一下让用户看到100%
+      await new Promise(resolve => setTimeout(resolve, 300))
     } catch (error: any) {
       console.error('转换失败:', error)
       conversionResult.value = {
@@ -1032,6 +1163,7 @@
       }
     } finally {
       isTestingConversion.value = false
+      conversionProgress.value = 0
     }
   }
 
@@ -1096,5 +1228,107 @@
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  // 调用Coze Workflow
+  const callCozeWorkflow = async () => {
+    if (!conversionResult.value || !conversionResult.value.success) return
+    
+    const xmlContent = getXmlContent()
+    if (!xmlContent) {
+      workflowResult.value = {
+        success: false,
+        error: 'XML内容为空'
+      }
+      return
+    }
+
+    isCallingWorkflow.value = true
+    workflowResult.value = null
+
+    try {
+      console.log('调用Coze Workflow，XML内容长度:', xmlContent.length)
+      
+      // 初始化Coze API客户端
+      const apiClient = new CozeAPI({
+        token: 'cztei_hb0jiElxbrOyBJYn0wbBKZMTfUJTUcWltqtjLoOvQo51G6pBILr8MVnF4ws2dS66D',
+        baseURL: 'https://api.coze.cn'
+      })
+
+      // 调用workflow stream API
+      const stream = await apiClient.workflows.runs.stream({
+        workflow_id: '7573337879529062440',
+        parameters: {
+          bit1: 0,
+          table_summary: selectedFile.value?.name || '工程总监任命通知',
+          xml_content: xmlContent
+        }
+      })
+
+      console.log('Coze Workflow Stream创建成功')
+      
+      // 收集流式响应数据
+      const chunks: any[] = []
+      let fullResponse: any = {}
+
+      // 处理流式响应
+      for await (const chunk of stream) {
+        console.log('收到chunk:', chunk)
+        chunks.push(chunk)
+        
+        // 合并所有响应数据
+        fullResponse = { ...fullResponse, ...chunk }
+      }
+
+      console.log('Coze Workflow调用完成')
+      console.log('总共收到chunks:', chunks.length)
+      console.log('完整响应:', fullResponse)
+
+      workflowResult.value = {
+        success: true,
+        data: fullResponse
+      }
+    } catch (error: any) {
+      console.error('Coze Workflow调用失败:', error)
+      workflowResult.value = {
+        success: false,
+        error: error.message || error.toString() || '调用失败'
+      }
+    } finally {
+      isCallingWorkflow.value = false
+    }
+  }
+
+  // 获取XML内容
+  const getXmlContent = (): string => {
+    if (!conversionResult.value || !conversionResult.value.success) return ''
+    
+    const data = conversionResult.value.data
+    const format = conversionResult.value.format
+
+    if (format === 'xml' || format === 'xml-formatted') {
+      if (typeof data === 'string') {
+        return data
+      } else if (data.document) {
+        return data.document
+      } else if (data.allXmlFiles && data.allXmlFiles['word/document.xml']) {
+        return data.allXmlFiles['word/document.xml']
+      }
+    }
+    
+    return ''
+  }
+
+  // 格式化Workflow结果
+  const formatWorkflowResult = (result: any): string => {
+    if (!result) return ''
+    
+    if (result.success && result.data) {
+      return JSON.stringify(result.data, null, 2)
+    } else if (result.error) {
+      return `错误: ${result.error}`
+    }
+    
+    return JSON.stringify(result, null, 2)
   }
 </script>
