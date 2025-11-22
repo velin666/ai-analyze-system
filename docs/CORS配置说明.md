@@ -154,8 +154,8 @@ fetch('http://your-server:3000/api/endpoint', {
 
 ```bash
 # 开发环境
-npm run dev
+pnpm dev
 
 # 生产环境（PM2）
-npm run pm2:restart
+pnpm pm2:restart
 ```

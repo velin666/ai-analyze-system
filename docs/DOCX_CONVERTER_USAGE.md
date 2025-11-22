@@ -7,13 +7,6 @@
 ## 安装依赖
 
 ```bash
-npm install adm-zip xml2js
-npm install -D @types/adm-zip @types/xml2js
-```
-
-或使用 pnpm：
-
-```bash
 pnpm install adm-zip xml2js
 pnpm install -D @types/adm-zip @types/xml2js
 ```

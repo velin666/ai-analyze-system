@@ -33,7 +33,7 @@
 
 ### 环境要求
 - Node.js 18+
-- npm 或 yarn
+- pnpm
 - DeepSeek API Key
 
 ### 安装步骤
@@ -46,7 +46,7 @@ cd ai-project
 
 2. **安装依赖**
 ```bash
-npm install
+pnpm install
 ```
 
 3. **环境配置**
@@ -60,7 +60,7 @@ DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 4. **启动开发服务器**
 ```bash
-npm run dev
+pnpm dev
 ```
 
 访问 `http://localhost:3000` 查看应用。
@@ -69,31 +69,31 @@ npm run dev
 
 ### 构建应用
 ```bash
-npm run build
+pnpm build
 ```
 
 ### PM2 管理
 
 1. **安装 PM2**
 ```bash
-npm install -g pm2
+pnpm add -g pm2
 ```
 
 2. **启动应用**
 ```bash
-npm run pm2:start
+pnpm pm2:start
 ```
 
 3. **管理命令**
 ```bash
 # 重启应用
-npm run pm2:restart
+pnpm pm2:restart
 
 # 停止应用
-npm run pm2:stop
+pnpm pm2:stop
 
 # 删除应用
-npm run pm2:delete
+pnpm pm2:delete
 
 # 查看状态
 pm2 status
