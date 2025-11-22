@@ -158,3 +158,100 @@ export async function convertDocxToFormattedXml(
   // 只返回主文档XML
   return xmlContent.document || ''
 }
+
+/**
+ * 按页数拆分DOCX的XML内容
+ * @param filePath DOCX文件路径
+ * @param pagesPerFile 每个XML包含的页数（默认30）
+ * @returns 拆分后的XML数组
+ */
+export async function splitDocxXmlByPages(
+  filePath: string,
+  pagesPerFile: number = 30
+): Promise<string[]> {
+  try {
+    const xmlContent = await extractXmlFromDocx(filePath)
+    
+    if (!xmlContent.document) {
+      throw new Error('No document content found')
+    }
+
+    const documentXml = xmlContent.document
+    
+    // 使用正则表达式查找所有段落和分页符
+    // w:br w:type="page" 表示硬分页符
+    // w:lastRenderedPageBreak 表示软分页符（渲染时的分页位置）
+    const pageBreakPattern = /<w:br\s+w:type="page"\/?>|<w:lastRenderedPageBreak\/>/g
+    
+    // 分割XML内容
+    const parts = documentXml.split(pageBreakPattern)
+    
+    // 如果没有找到分页符，尝试按段落数量估算
+    if (parts.length <= 1) {
+      // 按段落数量估算（假设每页约30-50个段落）
+      return estimateSplitByParagraphs(documentXml, pagesPerFile)
+    }
+    
+    // 获取XML文档的头部和尾部
+    const xmlHeader = documentXml.substring(0, documentXml.indexOf('<w:body>') + 8)
+    const xmlFooter = '</w:body></w:document>'
+    
+    // 合并分页的内容
+    const result: string[] = []
+    let currentPageGroup: string[] = []
+    let pageCount = 0
+    
+    for (let i = 0; i < parts.length; i++) {
+      currentPageGroup.push(parts[i])
+      pageCount++
+      
+      // 每达到指定页数就创建一个新的XML
+      if (pageCount >= pagesPerFile || i === parts.length - 1) {
+        const combinedContent = currentPageGroup.join('\n')
+        const fullXml = xmlHeader + combinedContent + xmlFooter
+        result.push(fullXml)
+        
+        currentPageGroup = []
+        pageCount = 0
+      }
+    }
+    
+    return result.length > 0 ? result : [documentXml]
+  } catch (error) {
+    throw new Error(`Failed to split DOCX XML: ${error}`)
+  }
+}
+
+/**
+ * 按段落数量估算拆分（当没有明确分页符时使用）
+ * @param documentXml 文档XML内容
+ * @param pagesPerFile 每个文件的页数
+ * @returns 拆分后的XML数组
+ */
+function estimateSplitByParagraphs(documentXml: string, pagesPerFile: number): string[] {
+  // 提取所有段落
+  const paragraphPattern = /<w:p\s+[^>]*>.*?<\/w:p>|<w:p>.*?<\/w:p>/gs
+  const paragraphs = documentXml.match(paragraphPattern) || []
+  
+  if (paragraphs.length === 0) {
+    return [documentXml]
+  }
+  
+  // 假设每页约40个段落
+  const paragraphsPerPage = 40
+  const paragraphsPerFile = pagesPerFile * paragraphsPerPage
+  
+  // 获取XML文档的头部和尾部
+  const xmlHeader = documentXml.substring(0, documentXml.indexOf('<w:body>') + 8)
+  const xmlFooter = '</w:body></w:document>'
+  
+  const result: string[] = []
+  
+  for (let i = 0; i < paragraphs.length; i += paragraphsPerFile) {
+    const chunk = paragraphs.slice(i, i + paragraphsPerFile)
+    const fullXml = xmlHeader + chunk.join('\n') + xmlFooter
+    result.push(fullXml)
+  }
+  
+  return result
+}

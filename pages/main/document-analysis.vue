@@ -285,6 +285,180 @@
                 </div>
               </div>
 
+              <!-- 文档拆分功能 -->
+              <div class="mt-6 pt-6 border-t border-purple-200">
+                <h3 class="text-sm font-semibold text-purple-900 mb-3">
+                  文档拆分功能
+                </h3>
+                <div class="flex items-center space-x-3 mb-3">
+                  <label class="text-sm text-gray-700">
+                    每个文件包含页数：
+                  </label>
+                  <input
+                    v-model.number="pagesPerFile"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  />
+                  <span class="text-xs text-gray-500">（默认30页）</span>
+                </div>
+                <button
+                  @click="splitDocument"
+                  :disabled="
+                    !selectedFile || !isDocxFile || isSplittingDocument
+                  "
+                  class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {{ isSplittingDocument ? '拆分中...' : '拆分文档' }}
+                </button>
+              </div>
+
+              <!-- 拆分结果 -->
+              <div v-if="splitResult" class="mt-4 space-y-3">
+                <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div class="flex items-center space-x-2 mb-3">
+                    <svg
+                      class="w-5 h-5 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span class="text-sm font-semibold text-purple-800"
+                      >拆分完成</span
+                    >
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                    <div class="bg-white border border-purple-200 rounded p-2">
+                      <div class="text-purple-600 font-medium">总共拆分为</div>
+                      <div class="text-lg font-bold text-purple-700">
+                        {{ splitResult.totalChunks }} 个XML
+                      </div>
+                    </div>
+                    <div class="bg-white border border-purple-200 rounded p-2">
+                      <div class="text-purple-600 font-medium">每个文件</div>
+                      <div class="text-lg font-bold text-purple-700">
+                        {{ splitResult.pagesPerFile }} 页
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 分页查看 -->
+                  <div class="mt-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-purple-700"
+                        >预览第 {{ currentChunkIndex + 1 }} /
+                        {{ splitResult.totalChunks }} 个XML：</span
+                      >
+                      <div class="flex items-center space-x-2">
+                        <button
+                          @click="previousChunk"
+                          :disabled="currentChunkIndex === 0"
+                          class="p-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
+                        <span class="text-sm text-purple-600"
+                          >{{ currentChunkIndex + 1 }} /
+                          {{ splitResult.totalChunks }}</span
+                        >
+                        <button
+                          @click="nextChunk"
+                          :disabled="
+                            currentChunkIndex === splitResult.totalChunks - 1
+                          "
+                          class="p-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      class="bg-white border border-purple-200 rounded p-3 max-h-64 overflow-auto"
+                    >
+                      <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{
+                        formatXmlPreview(
+                          splitResult.chunks[currentChunkIndex]
+                        )
+                      }}</pre>
+                    </div>
+                  </div>
+
+                  <!-- 下载按钮 -->
+                  <div class="mt-4 flex items-center space-x-2">
+                    <button
+                      @click="downloadAllChunks"
+                      class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      打包下载全部XML
+                    </button>
+                    <button
+                      @click="downloadCurrentChunk"
+                      class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      下载当前XML
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <!-- 测试结果 -->
               <div v-if="conversionResult" class="space-y-3">
                 <!-- 成功状态 -->
@@ -950,6 +1124,12 @@
   // Coze workflow调用相关
   const isCallingWorkflow = ref(false)
   const workflowResult = ref<any>(null)
+  
+  // 文档拆分相关
+  const pagesPerFile = ref(30)
+  const isSplittingDocument = ref(false)
+  const splitResult = ref<any>(null)
+  const currentChunkIndex = ref(0)
 
   // 计算属性
   const canAnalyze = computed(() => {
@@ -1330,5 +1510,119 @@
     }
     
     return JSON.stringify(result, null, 2)
+  }
+
+  // 文档拆分功能
+  const splitDocument = async () => {
+    if (!selectedFile.value || !isDocxFile.value) return
+
+    isSplittingDocument.value = true
+    splitResult.value = null
+    currentChunkIndex.value = 0
+
+    try {
+      // 1. 确保文件已上传
+      if (!uploadedFileId.value) {
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const uploadResponse = await $fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        uploadedFileId.value = (uploadResponse as any).id
+      }
+
+      // 2. 调用拆分API
+      const response = await $fetch('/api/files/split-docx', {
+        method: 'POST',
+        body: {
+          fileId: uploadedFileId.value,
+          pagesPerFile: pagesPerFile.value,
+        },
+      })
+
+      splitResult.value = response
+    } catch (error: any) {
+      console.error('拆分失败:', error)
+      alert('拆分失败: ' + (error.message || error.statusMessage || '未知错误'))
+    } finally {
+      isSplittingDocument.value = false
+    }
+  }
+
+  // 分页导航
+  const previousChunk = () => {
+    if (currentChunkIndex.value > 0) {
+      currentChunkIndex.value--
+    }
+  }
+
+  const nextChunk = () => {
+    if (splitResult.value && currentChunkIndex.value < splitResult.value.totalChunks - 1) {
+      currentChunkIndex.value++
+    }
+  }
+
+  // 格式化XML预览
+  const formatXmlPreview = (xml: string): string => {
+    if (!xml) return ''
+    
+    // 截取前1000个字符用于预览
+    return xml.length > 1000
+      ? xml.substring(0, 1000) + '\n\n... (总计 ' + xml.length + ' 字符)'
+      : xml
+  }
+
+  // 下载当前chunk
+  const downloadCurrentChunk = () => {
+    if (!splitResult.value || !splitResult.value.chunks) return
+
+    const xml = splitResult.value.chunks[currentChunkIndex.value]
+    const filename = `document_part_${currentChunkIndex.value + 1}.xml`
+    
+    downloadFile(xml, filename, 'application/xml')
+  }
+
+  // 打包下载所有chunks
+  const downloadAllChunks = async () => {
+    if (!splitResult.value || !splitResult.value.chunks) return
+
+    try {
+      // 动态导入JSZip
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+
+      // 将所有XML添加到zip
+      splitResult.value.chunks.forEach((xml: string, index: number) => {
+        zip.file(`document_part_${index + 1}.xml`, xml)
+      })
+
+      // 生成zip文件
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
+      
+      // 下载zip文件
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `document_split_${splitResult.value.totalChunks}_parts.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('打包下载失败:', error)
+      alert('打包下载失败，请确保已安装jszip依赖')
+    }
+  }
+
+  // 通用文件下载函数
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
   }
 </script>
