@@ -790,6 +790,21 @@
   const isSplittingDocument = ref(false)
   const splitResult = ref<any>(null)
 
+  // 拆分进度相关
+  const splitProgress = ref({
+    total: 0,
+    completed: 0,
+    percentage: 0,
+  })
+
+  const currentFileProgress = ref({
+    fileIndex: 0,
+    step: '',
+    percentage: 0,
+  })
+
+  const progressLogs = ref<string[]>([])
+
   // 计算属性
   const canAnalyze = computed(() => {
     return selectedFile.value || textInput.value.trim().length > 0
@@ -948,8 +963,12 @@
   const splitDocument = async () => {
     if (!selectedFile.value || !isDocxFile.value) return
 
+    // 重置进度状态
     isSplittingDocument.value = true
     splitResult.value = null
+    splitProgress.value = { total: 0, completed: 0, percentage: 0 }
+    currentFileProgress.value = { fileIndex: 0, step: '', percentage: 0 }
+    progressLogs.value = []
 
     try {
       // 1. 上传文件
@@ -962,23 +981,160 @@
       })
 
       const fileId = (uploadResponse as any).id
+      progressLogs.value.push('文件上传完成，开始拆分...')
 
-      // 2. 拆分文档
-      const splitResponse = await $fetch('/api/files/split-docx', {
-        method: 'POST',
-        body: {
-          fileId: fileId,
-          pagesPerFile: pagesPerFile.value,
-        },
-      })
+      // 2. 使用EventSource接收实时进度
+      progressLogs.value.push('开始拆分处理...')
 
-      splitResult.value = splitResponse
+      // 尝试使用实时进度版本
+      const useRealTimeProgress = true // 可以设置为false使用简单版本
+
+      if (useRealTimeProgress) {
+        await handleRealTimeProgress(fileId)
+      } else {
+        await handleSimpleProgress(fileId)
+      }
     } catch (error: any) {
       console.error('拆分失败:', error)
-      // 显示错误提示
       alert(error.message || '拆分失败，请重试')
     } finally {
       isSplittingDocument.value = false
+    }
+  }
+
+  // 实时进度处理方法
+  const handleRealTimeProgress = (fileId: string) => {
+    return new Promise<void>((resolve, reject) => {
+      const eventSource = new EventSource(
+        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${pagesPerFile.value}`
+      )
+
+      eventSource.onmessage = event => {
+        try {
+          const data = JSON.parse(event.data)
+          handleProgressMessage(data, resolve, reject, eventSource)
+        } catch (e) {
+          console.error('解析进度数据失败:', e)
+          eventSource.close()
+          reject(e)
+        }
+      }
+
+      eventSource.onerror = error => {
+        console.error('EventSource错误:', error)
+        eventSource.close()
+        reject(new Error('连接错误'))
+      }
+
+      // 5分钟超时
+      setTimeout(() => {
+        eventSource.close()
+        reject(new Error('处理超时'))
+      }, 300000)
+    })
+  }
+
+  // 简单进度处理方法（备用）
+  const handleSimpleProgress = async (fileId: string) => {
+    const splitResponse = await $fetch('/api/files/split-docx', {
+      method: 'POST',
+      body: {
+        fileId: fileId,
+        pagesPerFile: pagesPerFile.value,
+      },
+    })
+
+    splitResult.value = splitResponse
+    progressLogs.value.push('拆分完成！')
+  }
+
+  // 处理进度消息
+  const handleProgressMessage = (
+    data: any,
+    resolve: Function,
+    reject: Function,
+    eventSource: EventSource
+  ) => {
+    switch (data.type) {
+      case 'progress':
+        handleProgressUpdate(data.data)
+        break
+      case 'log':
+        progressLogs.value.push(data.data.message)
+        // 保持日志数量不超过50条
+        if (progressLogs.value.length > 50) {
+          progressLogs.value = progressLogs.value.slice(-50)
+        }
+        break
+      case 'info':
+        progressLogs.value.push(data.data.message)
+        break
+      case 'complete':
+        eventSource.close()
+        splitResult.value = data.data
+        progressLogs.value.push('拆分完成！')
+        resolve()
+        break
+      case 'error':
+        eventSource.close()
+        progressLogs.value.push('错误: ' + data.data.message)
+        reject(new Error(data.data.message))
+        break
+    }
+  }
+
+  // 处理进度更新
+  const handleProgressUpdate = (progressData: any) => {
+    switch (progressData.type) {
+      case 'total_files':
+        splitProgress.value.total = progressData.total
+        progressLogs.value.push(`总共需要拆分 ${progressData.total} 个文件`)
+        break
+      case 'file_start':
+        currentFileProgress.value.fileIndex = progressData.current
+        currentFileProgress.value.step = '开始处理'
+        currentFileProgress.value.percentage = 0
+        progressLogs.value.push(`开始处理第 ${progressData.current} 个文件`)
+        break
+      case 'file_step':
+        currentFileProgress.value.fileIndex = progressData.fileIndex
+        currentFileProgress.value.step = progressData.step
+        currentFileProgress.value.percentage = progressData.percentage
+        break
+      case 'file_complete':
+        splitProgress.value.completed = progressData.completed
+        splitProgress.value.percentage = Math.round(
+          (progressData.completed / progressData.total) * 100
+        )
+        currentFileProgress.value.percentage = 100
+        progressLogs.value.push(
+          `完成第 ${progressData.completed} 个文件 (共 ${progressData.total} 个)`
+        )
+        break
+      case 'all_complete':
+        splitProgress.value.completed = progressData.completed
+        splitProgress.value.percentage = 100
+        currentFileProgress.value.percentage = 100
+        currentFileProgress.value.step = '所有文件拆分完成'
+        break
+      case 'zip_start':
+        currentFileProgress.value.fileIndex = 0
+        currentFileProgress.value.step = '创建ZIP文件'
+        currentFileProgress.value.percentage = 0
+        progressLogs.value.push('开始创建ZIP压缩包...')
+        break
+      case 'zip_progress':
+        currentFileProgress.value.step = `打包文件: ${progressData.fileName}`
+        currentFileProgress.value.percentage = progressData.percentage
+        if (
+          progressData.current % 5 === 0 ||
+          progressData.current === progressData.total
+        ) {
+          progressLogs.value.push(
+            `正在打包: ${progressData.current}/${progressData.total} 个文件`
+          )
+        }
+        break
     }
   }
 

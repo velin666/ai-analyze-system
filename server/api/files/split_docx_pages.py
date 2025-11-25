@@ -295,6 +295,10 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
     print(f"总页数: {total_pages}")
     print(f"每个文件包含: {pages_per_file} 页")
     
+    # 计算总文件数
+    total_files = (total_pages + pages_per_file - 1) // pages_per_file
+    print(f"PROGRESS:TOTAL_FILES:{total_files}")
+    
     try:
         file_index = 1
         start_page = 1
@@ -303,15 +307,18 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
             end_page = min(start_page + pages_per_file - 1, total_pages)
             
             print(f"正在处理第 {file_index} 个文件: 第{start_page}-{end_page}页")
+            print(f"PROGRESS:FILE_START:{file_index}:{total_files}")
             
             newdoc = None
             try:
                 # 创建新文档
                 print(f"  创建新文档...")
+                print(f"PROGRESS:FILE_STEP:{file_index}:创建新文档:10")
                 newdoc = word.Documents.Add()
                 
                 # 获取起始位置
                 print(f"  定位到第{start_page}页...")
+                print(f"PROGRESS:FILE_STEP:{file_index}:定位页面:20")
                 start_pos = doc.GoTo(
                     What=getattr(win32.constants, "wdGoToPage", 1),
                     Which=getattr(win32.constants, "wdGoToAbsolute", 1),
@@ -333,6 +340,7 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                 
                 # 复制页面设置
                 print(f"  复制页面设置...")
+                print(f"PROGRESS:FILE_STEP:{file_index}:复制页面设置:40")
                 try:
                     sec = doc.Range(Start=start_pos, End=start_pos).Sections(1)
                     dst_sec = newdoc.Sections(1)
@@ -353,6 +361,7 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                 
                 # 复制内容
                 print(f"  复制内容...")
+                print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:60")
                 rng.Copy()
                 try:
                     newdoc.Range(0, 0).PasteAndFormat(getattr(win32.constants, "wdFormatOriginalFormatting", 1))
@@ -369,6 +378,7 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                     pass
                 
                 # 复制页眉页脚
+                print(f"PROGRESS:FILE_STEP:{file_index}:复制页眉页脚:80")
                 try:
                     htype = getattr(win32.constants, "wdHeaderFooterPrimary", 1)
                     ftype = getattr(win32.constants, "wdHeaderFooterPrimary", 1)
@@ -391,12 +401,15 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                 out_filename = f"第{start_page}-{end_page}页.docx"
                 out_path = os.path.join(output_dir, out_filename)
                 print(f"  保存文件: {out_filename}")
+                print(f"PROGRESS:FILE_STEP:{file_index}:保存文件:90")
                 newdoc.SaveAs2(out_path, FileFormat=constants.wdFormatXMLDocument)
                 
                 print(f"已保存: {out_filename}")
+                print(f"PROGRESS:FILE_COMPLETE:{file_index}:{total_files}")
                 
             except Exception as e:
                 print(f"  处理第{file_index}个文件时出错: {e}")
+                print(f"PROGRESS:FILE_ERROR:{file_index}:{e}")
                 raise
             finally:
                 # 安全关闭新文档
@@ -410,6 +423,7 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
             start_page = end_page + 1
             
         print(f"拆分完成！共生成 {file_index - 1} 个文件")
+        print(f"PROGRESS:ALL_FILES_COMPLETE:{file_index - 1}:{total_files}")
             
     except Exception as e:
         print(f"拆分过程中发生错误: {e}")

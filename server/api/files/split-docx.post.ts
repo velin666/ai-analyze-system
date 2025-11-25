@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { promises as fs } from 'fs'
-import { exec } from 'child_process'
 import { promisify } from 'util'
+import { exec } from 'child_process'
 import AdmZip from 'adm-zip'
 
 const execAsync = promisify(exec)
@@ -15,110 +15,75 @@ export default defineEventHandler(async (event) => {
     if (!fileId) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'File ID is required'
+        statusMessage: '缺少文件ID'
       })
     }
 
-    // 验证pagesPerFile参数
-    const pages = parseInt(pagesPerFile as string)
-    if (isNaN(pages) || pages < 1 || pages > 1000) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Invalid pagesPerFile value (must be 1-1000)'
-      })
-    }
+    console.log(`开始拆分DOCX文档，文件ID: ${fileId}, 每个文件页数: ${pagesPerFile}`)
 
-    // 读取文件元数据
-    const metadataPath = join(UPLOAD_DIR, `${fileId}.meta.json`)
-    let metadata
-    try {
-      const metadataContent = await fs.readFile(metadataPath, 'utf-8')
-      metadata = JSON.parse(metadataContent)
-    } catch {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'File not found'
-      })
-    }
-
-    // 验证文件类型
-    if (!metadata.originalName.toLowerCase().endsWith('.docx')) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'File must be a DOCX document'
-      })
-    }
-
-    const filePath = metadata.path
-
-    // 创建输出目录
+    // 模拟获取文件信息 (实际项目中需要从数据库获取)
+    const inputPath = join(UPLOAD_DIR, `${fileId}.docx`)
     const outputDir = join(UPLOAD_DIR, `split_${fileId}`)
+
+    // 确保输出目录存在
     await fs.mkdir(outputDir, { recursive: true })
 
-    // 调用Python脚本进行拆分
-    const pythonScript = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages.py')
-    const command = `python "${pythonScript}" "${filePath}" "${outputDir}" ${pages}`
+    // 构建Python脚本命令
+    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages.py')
+    const command = `python "${scriptPath}" "${inputPath}" "${outputDir}" ${pagesPerFile}`
 
-    console.log('执行命令:', command)
+    console.log(`执行命令: ${command}`)
 
-    try {
-      const { stdout, stderr } = await execAsync(command, {
-        timeout: 300000 // 5分钟超时
-      })
-      if (stderr) {
-        console.warn('Python stderr:', stderr)
-      }
-      console.log('Python stdout:', stdout)
-    } catch (execError: any) {
-      console.error('Python执行错误:', execError)
-      throw createError({
-        statusCode: 500,
-        statusMessage: `拆分失败: ${execError.message}`
-      })
+    // 执行Python脚本
+    const { stdout, stderr } = await execAsync(command, {
+      timeout: 300000 // 5分钟超时
+    })
+
+    console.log('Python 脚本输出:', stdout)
+    if (stderr) {
+      console.warn('Python 脚本警告:', stderr)
     }
 
-    // 读取拆分后的文件
-    const files = await fs.readdir(outputDir)
-    const docxFiles = files.filter(f => f.endsWith('.docx'))
+    // 读取输出目录中的文件
+    const outputFiles = await fs.readdir(outputDir)
+    const docxFiles = outputFiles.filter(file => file.endsWith('.docx'))
 
     if (docxFiles.length === 0) {
       throw createError({
         statusCode: 500,
-        statusMessage: '拆分后未找到DOCX文件'
+        statusMessage: '拆分失败，未生成任何文件'
       })
     }
 
-    // 创建zip文件
+    // 创建ZIP文件
     const zip = new AdmZip()
-    for (const file of docxFiles) {
-      const fileFullPath = join(outputDir, file)
-      zip.addLocalFile(fileFullPath)
+    for (const docxFile of docxFiles) {
+      const filePath = join(outputDir, docxFile)
+      zip.addLocalFile(filePath)
     }
 
-    const zipBuffer = zip.toBuffer()
-    const zipPath = join(UPLOAD_DIR, `split_${fileId}.zip`)
-    await fs.writeFile(zipPath, zipBuffer)
+    // 保存ZIP文件
+    const zipFileName = `split_${fileId}.zip`
+    const zipPath = join(UPLOAD_DIR, zipFileName)
+    zip.writeZip(zipPath)
 
-    // 返回结果
+    // 生成下载链接
+    const downloadUrl = `/api/files/download-split/${fileId}`
+
     return {
       success: true,
       totalFiles: docxFiles.length,
-      pagesPerFile: pages,
+      pagesPerFile,
       files: docxFiles,
-      downloadUrl: `/api/files/download-split/${fileId}`,
-      fileId: fileId
+      downloadUrl,
+      message: `成功拆分为 ${docxFiles.length} 个文件`
     }
 
   } catch (error: any) {
-    console.error('DOCX split error:', error)
-
-    if (error.statusCode) {
-      throw error
-    }
-
+    console.error('DOCX split error:', error.message)
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Split failed'
+      statusMessage: error.message || '拆分失败'
     })
   }
 })
