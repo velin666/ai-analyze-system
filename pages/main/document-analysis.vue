@@ -145,7 +145,7 @@
             </div>
           </div>
 
-          <!-- DOCX转XML测试区域 -->
+          <!-- DOCX文档拆分区域 -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2
               class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
@@ -160,52 +160,62 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              DOCX转XML测试
+              DOCX文档拆分
             </h2>
 
             <div class="space-y-4">
-              <!-- 测试按钮组 -->
-              <div class="flex flex-wrap gap-2">
-                <button
-                  @click="testDocxConversion('xml')"
-                  :disabled="
-                    !selectedFile || !isDocxFile || isTestingConversion
-                  "
-                  class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  测试XML提取
-                </button>
-                <button
-                  @click="testDocxConversion('json')"
-                  :disabled="
-                    !selectedFile || !isDocxFile || isTestingConversion
-                  "
-                  class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  测试JSON转换
-                </button>
-                <button
-                  @click="testDocxConversion('text')"
-                  :disabled="
-                    !selectedFile || !isDocxFile || isTestingConversion
-                  "
-                  class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  测试文本提取
-                </button>
-                <button
-                  @click="testDocxConversion('xml-formatted')"
-                  :disabled="
-                    !selectedFile || !isDocxFile || isTestingConversion
-                  "
-                  class="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  测试完整XML
-                </button>
+              <!-- 拆分设置 -->
+              <div class="flex items-center space-x-3 mb-3">
+                <label class="text-sm text-gray-700">每个文件包含页数：</label>
+                <input
+                  v-model.number="pagesPerFile"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <span class="text-xs text-gray-500">（默认30页）</span>
               </div>
+
+              <!-- 拆分按钮 -->
+              <button
+                @click="splitDocument"
+                :disabled="!selectedFile || !isDocxFile || isSplittingDocument"
+                class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              >
+                <svg
+                  v-if="!isSplittingDocument"
+                  class="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="w-5 h-5 mr-2 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                {{ isSplittingDocument ? '拆分中...' : '拆分文档' }}
+              </button>
 
               <!-- 提示信息 -->
               <div
@@ -225,7 +235,7 @@
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                请先上传DOCX文件进行测试
+                请先上传DOCX文件进行拆分
               </div>
               <div
                 v-else-if="!isDocxFile"
@@ -247,76 +257,11 @@
                 当前文件不是DOCX格式
               </div>
 
-              <!-- 测试进度 -->
-              <div
-                v-if="isTestingConversion"
-                class="p-4 bg-purple-50 rounded-lg"
-              >
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2 text-purple-700">
-                      <svg
-                        class="w-5 h-5 animate-spin"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                      <span class="text-sm font-medium">{{
-                        conversionStatus
-                      }}</span>
-                    </div>
-                    <span class="text-sm font-semibold text-purple-700"
-                      >{{ Math.round(conversionProgress) }}%</span
-                    >
-                  </div>
-                  <div class="w-full bg-purple-200 rounded-full h-2">
-                    <div
-                      class="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-300"
-                      :style="{ width: `${conversionProgress}%` }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 文档拆分功能 -->
-              <div class="mt-6 pt-6 border-t border-purple-200">
-                <h3 class="text-sm font-semibold text-purple-900 mb-3">
-                  文档拆分功能
-                </h3>
-                <div class="flex items-center space-x-3 mb-3">
-                  <label class="text-sm text-gray-700">
-                    每个文件包含页数：
-                  </label>
-                  <input
-                    v-model.number="pagesPerFile"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  />
-                  <span class="text-xs text-gray-500">（默认30页）</span>
-                </div>
-                <button
-                  @click="splitDocument"
-                  :disabled="
-                    !selectedFile || !isDocxFile || isSplittingDocument
-                  "
-                  class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {{ isSplittingDocument ? '拆分中...' : '拆分文档' }}
-                </button>
-              </div>
-
               <!-- 拆分结果 -->
               <div v-if="splitResult" class="mt-4 space-y-3">
-                <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div
+                  class="p-4 bg-purple-50 border border-purple-200 rounded-lg"
+                >
                   <div class="flex items-center space-x-2 mb-3">
                     <svg
                       class="w-5 h-5 text-purple-600"
@@ -335,326 +280,59 @@
                       >拆分完成</span
                     >
                   </div>
-                  <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                    <div class="bg-white border border-purple-200 rounded p-2">
-                      <div class="text-purple-600 font-medium">总共拆分为</div>
-                      <div class="text-lg font-bold text-purple-700">
-                        {{ splitResult.totalChunks }} 个XML
+                  <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                    <div class="bg-white border border-purple-200 rounded p-3">
+                      <div class="text-purple-600 font-medium">拆分文件数</div>
+                      <div class="text-2xl font-bold text-purple-700">
+                        {{ splitResult.totalFiles }}
                       </div>
                     </div>
-                    <div class="bg-white border border-purple-200 rounded p-2">
+                    <div class="bg-white border border-purple-200 rounded p-3">
                       <div class="text-purple-600 font-medium">每个文件</div>
-                      <div class="text-lg font-bold text-purple-700">
+                      <div class="text-2xl font-bold text-purple-700">
                         {{ splitResult.pagesPerFile }} 页
                       </div>
                     </div>
                   </div>
 
-                  <!-- 分页查看 -->
-                  <div class="mt-4">
-                    <div class="flex items-center justify-between mb-2">
-                      <span class="text-sm font-medium text-purple-700"
-                        >预览第 {{ currentChunkIndex + 1 }} /
-                        {{ splitResult.totalChunks }} 个XML：</span
-                      >
-                      <div class="flex items-center space-x-2">
-                        <button
-                          @click="previousChunk"
-                          :disabled="currentChunkIndex === 0"
-                          class="p-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M15 19l-7-7 7-7"
-                            />
-                          </svg>
-                        </button>
-                        <span class="text-sm text-purple-600"
-                          >{{ currentChunkIndex + 1 }} /
-                          {{ splitResult.totalChunks }}</span
-                        >
-                        <button
-                          @click="nextChunk"
-                          :disabled="
-                            currentChunkIndex === splitResult.totalChunks - 1
-                          "
-                          class="p-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                  <!-- 文件列表 -->
+                  <div
+                    class="bg-white border border-purple-200 rounded p-3 max-h-40 overflow-auto mb-3"
+                  >
+                    <div class="text-xs font-medium text-purple-700 mb-2">
+                      拆分文件列表：
                     </div>
-                    <div
-                      class="bg-white border border-purple-200 rounded p-3 max-h-64 overflow-auto"
-                    >
-                      <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{
-                        formatXmlPreview(
-                          splitResult.chunks[currentChunkIndex]
-                        )
-                      }}</pre>
+                    <div class="space-y-1">
+                      <div
+                        v-for="(file, index) in splitResult.files"
+                        :key="index"
+                        class="text-xs text-gray-700 flex items-center"
+                      >
+                        <svg
+                          class="w-3 h-3 mr-1 text-purple-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        {{ file }}
+                      </div>
                     </div>
                   </div>
 
                   <!-- 下载按钮 -->
-                  <div class="mt-4 flex items-center space-x-2">
-                    <button
-                      @click="downloadAllChunks"
-                      class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
-                    >
-                      <svg
-                        class="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                      打包下载全部XML
-                    </button>
-                    <button
-                      @click="downloadCurrentChunk"
-                      class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                    >
-                      <svg
-                        class="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                      下载当前XML
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 测试结果 -->
-              <div v-if="conversionResult" class="space-y-3">
-                <!-- 成功状态 -->
-                <div
-                  v-if="conversionResult.success"
-                  class="p-4 bg-green-50 border border-green-200 rounded-lg"
-                >
-                  <div class="flex items-center space-x-2 mb-3">
-                    <svg
-                      class="w-5 h-5 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span class="text-sm font-semibold text-green-800"
-                      >转换成功</span
-                    >
-                    <span
-                      class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded"
-                      >{{ conversionResult.format }}</span
-                    >
-                  </div>
-
-                  <!-- 结果预览 -->
-                  <div class="mt-3">
-                    <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-medium text-green-700"
-                        >转换结果预览：</span
-                      >
-                      <button
-                        @click="downloadConversionResult"
-                        class="text-xs text-green-600 hover:text-green-700 flex items-center"
-                      >
-                        <svg
-                          class="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        下载结果
-                      </button>
-                    </div>
-                    <div
-                      v-if="conversionResult.format === 'xml' || conversionResult.format === 'xml-formatted'"
-                      class="mb-3"
-                    >
-                      <button
-                        @click="callCozeWorkflow"
-                        :disabled="isCallingWorkflow"
-                        class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                      >
-                        <svg
-                          v-if="!isCallingWorkflow"
-                          class="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                          />
-                        </svg>
-                        <svg
-                          v-else
-                          class="w-4 h-4 mr-2 animate-spin"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                          />
-                        </svg>
-                        {{ isCallingWorkflow ? '正在调用Coze Workflow...' : '调用Coze Workflow分析' }}
-                      </button>
-                    </div>
-                    <div
-                      class="bg-white border border-green-200 rounded p-3 max-h-96 overflow-auto"
-                    >
-                      <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{
-                        formatConversionResult(conversionResult.data)
-                      }}</pre>
-                    </div>
-
-                    <!-- 统计信息 -->
-                    <div
-                      v-if="conversionResult.format === 'xml'"
-                      class="mt-3 grid grid-cols-2 gap-2 text-xs"
-                    >
-                      <div class="bg-white border border-green-200 rounded p-2">
-                        <div class="text-green-600 font-medium">
-                          提取的XML文件数
-                        </div>
-                        <div class="text-lg font-bold text-green-700">
-                          {{
-                            Object.keys(conversionResult.data.allXmlFiles || {})
-                              .length
-                          }}
-                        </div>
-                      </div>
-                      <div class="bg-white border border-green-200 rounded p-2">
-                        <div class="text-green-600 font-medium">主文档大小</div>
-                        <div class="text-lg font-bold text-green-700">
-                          {{
-                            formatFileSize(
-                              (conversionResult.data.document || '').length
-                            )
-                          }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Workflow调用结果 -->
-                <div
-                  v-if="workflowResult"
-                  class="mt-4 p-4 border-2 border-blue-200 rounded-lg"
-                  :class="{
-                    'bg-blue-50': workflowResult.success,
-                    'bg-red-50': !workflowResult.success
-                  }"
-                >
-                  <div class="flex items-center space-x-2 mb-3">
-                    <svg
-                      v-if="workflowResult.success"
-                      class="w-5 h-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <svg
-                      v-else
-                      class="w-5 h-5 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span class="text-sm font-semibold" :class="{
-                      'text-blue-800': workflowResult.success,
-                      'text-red-800': !workflowResult.success
-                    }">Workflow {{ workflowResult.success ? '调用成功' : '调用失败' }}</span>
-                  </div>
-                  <div
-                    class="bg-white border rounded p-3 max-h-64 overflow-auto"
-                    :class="{
-                      'border-blue-200': workflowResult.success,
-                      'border-red-200': !workflowResult.success
-                    }"
+                  <button
+                    @click="downloadSplitFiles"
+                    class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
                   >
-                    <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{ formatWorkflowResult(workflowResult) }}</pre>
-                  </div>
-                </div>
-
-                <!-- 错误状态 -->
-                <div
-                  v-else
-                  class="p-4 bg-red-50 border border-red-200 rounded-lg"
-                >
-                  <div class="flex items-center space-x-2 mb-2">
                     <svg
-                      class="w-5 h-5 text-red-600"
+                      class="w-4 h-4 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -663,16 +341,11 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                       />
                     </svg>
-                    <span class="text-sm font-semibold text-red-800"
-                      >转换失败</span
-                    >
-                  </div>
-                  <p class="text-sm text-red-700">
-                    {{ conversionResult.error || '未知错误' }}
-                  </p>
+                    打包下载全部DOCX文档
+                  </button>
                 </div>
               </div>
             </div>
@@ -1098,8 +771,6 @@
 </template>
 
 <script setup lang="ts">
-  import { CozeAPI } from '@coze/api'
-
   // 页面标题
   definePageMeta({
     title: 'AI文档分析',
@@ -1114,22 +785,10 @@
   const currentStep = ref('')
   const analysisResult = ref<any>(null)
 
-  // DOCX转XML测试相关
-  const isTestingConversion = ref(false)
-  const conversionStatus = ref('')
-  const conversionProgress = ref(0)
-  const conversionResult = ref<any>(null)
-  const uploadedFileId = ref<string>('')
-  
-  // Coze workflow调用相关
-  const isCallingWorkflow = ref(false)
-  const workflowResult = ref<any>(null)
-  
   // 文档拆分相关
   const pagesPerFile = ref(30)
   const isSplittingDocument = ref(false)
   const splitResult = ref<any>(null)
-  const currentChunkIndex = ref(0)
 
   // 计算属性
   const canAnalyze = computed(() => {
@@ -1285,20 +944,15 @@
     textInput.value = ''
   }
 
-  // DOCX转XML测试方法
-  const testDocxConversion = async (format: string) => {
+  // 文档拆分方法
+  const splitDocument = async () => {
     if (!selectedFile.value || !isDocxFile.value) return
 
-    isTestingConversion.value = true
-    conversionStatus.value = '正在准备...'
-    conversionProgress.value = 0
-    conversionResult.value = null
+    isSplittingDocument.value = true
+    splitResult.value = null
 
     try {
       // 1. 上传文件
-      conversionStatus.value = '正在上传文件...'
-      conversionProgress.value = 10
-      
       const formData = new FormData()
       formData.append('file', selectedFile.value)
 
@@ -1307,316 +961,46 @@
         body: formData,
       })
 
-      uploadedFileId.value = (uploadResponse as any).id
-      conversionProgress.value = 40
-      conversionStatus.value = `正在转换为${format}格式...`
+      const fileId = (uploadResponse as any).id
 
-      // 模拟转换进度
-      const progressInterval = setInterval(() => {
-        if (conversionProgress.value < 90) {
-          conversionProgress.value += 5
-        }
-      }, 200)
-
-      // 2. 转换文件
-      const convertResponse = await $fetch('/api/files/convert-docx', {
+      // 2. 拆分文档
+      const splitResponse = await $fetch('/api/files/split-docx', {
         method: 'POST',
         body: {
-          fileId: uploadedFileId.value,
-          format: format,
-        },
-      })
-
-      clearInterval(progressInterval)
-      conversionProgress.value = 100
-      conversionStatus.value = '转换完成'
-      conversionResult.value = convertResponse
-      
-      // 延迟一下让用户看到100%
-      await new Promise(resolve => setTimeout(resolve, 300))
-    } catch (error: any) {
-      console.error('转换失败:', error)
-      conversionResult.value = {
-        success: false,
-        error:
-          error.message || error.statusMessage || '转换失败，请检查文件格式',
-      }
-    } finally {
-      isTestingConversion.value = false
-      conversionProgress.value = 0
-    }
-  }
-
-  const formatConversionResult = (data: any): string => {
-    if (!data) return ''
-
-    if (typeof data === 'string') {
-      // 如果是XML字符串，截取前1000个字符
-      return data.length > 1000
-        ? data.substring(0, 1000) + '\n\n... (总计 ' + data.length + ' 字符)'
-        : data
-    }
-
-    // 如果是对象，格式化为JSON
-    const jsonStr = JSON.stringify(data, null, 2)
-    return jsonStr.length > 1000
-      ? jsonStr.substring(0, 1000) +
-          '\n\n... (总计 ' +
-          jsonStr.length +
-          ' 字符)'
-      : jsonStr
-  }
-
-  const downloadConversionResult = () => {
-    if (!conversionResult.value || !conversionResult.value.success) return
-
-    const data = conversionResult.value.data
-    const format = conversionResult.value.format
-
-    let content: string
-    let filename: string
-    let mimeType: string
-
-    switch (format) {
-      case 'xml':
-      case 'xml-formatted':
-        content =
-          typeof data === 'string' ? data : JSON.stringify(data, null, 2)
-        filename = 'docx-converted.xml'
-        mimeType = 'application/xml'
-        break
-      case 'json':
-        content = JSON.stringify(data, null, 2)
-        filename = 'docx-converted.json'
-        mimeType = 'application/json'
-        break
-      case 'text':
-        content = typeof data === 'string' ? data : JSON.stringify(data)
-        filename = 'docx-extracted-text.txt'
-        mimeType = 'text/plain'
-        break
-      default:
-        content = JSON.stringify(data, null, 2)
-        filename = 'docx-converted.txt'
-        mimeType = 'text/plain'
-    }
-
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // 调用Coze Workflow
-  const callCozeWorkflow = async () => {
-    if (!conversionResult.value || !conversionResult.value.success) return
-    
-    const xmlContent = getXmlContent()
-    if (!xmlContent) {
-      workflowResult.value = {
-        success: false,
-        error: 'XML内容为空'
-      }
-      return
-    }
-
-    isCallingWorkflow.value = true
-    workflowResult.value = null
-
-    try {
-      console.log('调用Coze Workflow，XML内容长度:', xmlContent.length)
-      
-      // 初始化Coze API客户端
-      const apiClient = new CozeAPI({
-        token: 'cztei_hb0jiElxbrOyBJYn0wbBKZMTfUJTUcWltqtjLoOvQo51G6pBILr8MVnF4ws2dS66D',
-        baseURL: 'https://api.coze.cn'
-      })
-
-      // 调用workflow stream API
-      const stream = await apiClient.workflows.runs.stream({
-        workflow_id: '7573337879529062440',
-        parameters: {
-          bit1: 0,
-          table_summary: selectedFile.value?.name || '工程总监任命通知',
-          xml_content: xmlContent
-        }
-      })
-
-      console.log('Coze Workflow Stream创建成功')
-      
-      // 收集流式响应数据
-      const chunks: any[] = []
-      let fullResponse: any = {}
-
-      // 处理流式响应
-      for await (const chunk of stream) {
-        console.log('收到chunk:', chunk)
-        chunks.push(chunk)
-        
-        // 合并所有响应数据
-        fullResponse = { ...fullResponse, ...chunk }
-      }
-
-      console.log('Coze Workflow调用完成')
-      console.log('总共收到chunks:', chunks.length)
-      console.log('完整响应:', fullResponse)
-
-      workflowResult.value = {
-        success: true,
-        data: fullResponse
-      }
-    } catch (error: any) {
-      console.error('Coze Workflow调用失败:', error)
-      workflowResult.value = {
-        success: false,
-        error: error.message || error.toString() || '调用失败'
-      }
-    } finally {
-      isCallingWorkflow.value = false
-    }
-  }
-
-  // 获取XML内容
-  const getXmlContent = (): string => {
-    if (!conversionResult.value || !conversionResult.value.success) return ''
-    
-    const data = conversionResult.value.data
-    const format = conversionResult.value.format
-
-    if (format === 'xml' || format === 'xml-formatted') {
-      if (typeof data === 'string') {
-        return data
-      } else if (data.document) {
-        return data.document
-      } else if (data.allXmlFiles && data.allXmlFiles['word/document.xml']) {
-        return data.allXmlFiles['word/document.xml']
-      }
-    }
-    
-    return ''
-  }
-
-  // 格式化Workflow结果
-  const formatWorkflowResult = (result: any): string => {
-    if (!result) return ''
-    
-    if (result.success && result.data) {
-      return JSON.stringify(result.data, null, 2)
-    } else if (result.error) {
-      return `错误: ${result.error}`
-    }
-    
-    return JSON.stringify(result, null, 2)
-  }
-
-  // 文档拆分功能
-  const splitDocument = async () => {
-    if (!selectedFile.value || !isDocxFile.value) return
-
-    isSplittingDocument.value = true
-    splitResult.value = null
-    currentChunkIndex.value = 0
-
-    try {
-      // 1. 确保文件已上传
-      if (!uploadedFileId.value) {
-        const formData = new FormData()
-        formData.append('file', selectedFile.value)
-
-        const uploadResponse = await $fetch('/api/files/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        uploadedFileId.value = (uploadResponse as any).id
-      }
-
-      // 2. 调用拆分API
-      const response = await $fetch('/api/files/split-docx', {
-        method: 'POST',
-        body: {
-          fileId: uploadedFileId.value,
+          fileId: fileId,
           pagesPerFile: pagesPerFile.value,
         },
       })
 
-      splitResult.value = response
+      splitResult.value = splitResponse
     } catch (error: any) {
       console.error('拆分失败:', error)
-      alert('拆分失败: ' + (error.message || error.statusMessage || '未知错误'))
+      // 显示错误提示
+      alert(error.message || '拆分失败，请重试')
     } finally {
       isSplittingDocument.value = false
     }
   }
 
-  // 分页导航
-  const previousChunk = () => {
-    if (currentChunkIndex.value > 0) {
-      currentChunkIndex.value--
-    }
-  }
+  // 下载拆分后的文件
+  const downloadSplitFiles = () => {
+    if (!splitResult.value || !splitResult.value.downloadUrl) return
 
-  const nextChunk = () => {
-    if (splitResult.value && currentChunkIndex.value < splitResult.value.totalChunks - 1) {
-      currentChunkIndex.value++
-    }
-  }
-
-  // 格式化XML预览
-  const formatXmlPreview = (xml: string): string => {
-    if (!xml) return ''
-    
-    // 截取前1000个字符用于预览
-    return xml.length > 1000
-      ? xml.substring(0, 1000) + '\n\n... (总计 ' + xml.length + ' 字符)'
-      : xml
-  }
-
-  // 下载当前chunk
-  const downloadCurrentChunk = () => {
-    if (!splitResult.value || !splitResult.value.chunks) return
-
-    const xml = splitResult.value.chunks[currentChunkIndex.value]
-    const filename = `document_part_${currentChunkIndex.value + 1}.xml`
-    
-    downloadFile(xml, filename, 'application/xml')
-  }
-
-  // 打包下载所有chunks
-  const downloadAllChunks = async () => {
-    if (!splitResult.value || !splitResult.value.chunks) return
-
-    try {
-      // 动态导入JSZip
-      const JSZip = (await import('jszip')).default
-      const zip = new JSZip()
-
-      // 将所有XML添加到zip
-      splitResult.value.chunks.forEach((xml: string, index: number) => {
-        zip.file(`document_part_${index + 1}.xml`, xml)
-      })
-
-      // 生成zip文件
-      const zipBlob = await zip.generateAsync({ type: 'blob' })
-      
-      // 下载zip文件
-      const url = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `document_split_${splitResult.value.totalChunks}_parts.zip`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('打包下载失败:', error)
-      alert('打包下载失败，请确保已安装jszip依赖')
-    }
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.href = splitResult.value.downloadUrl
+    link.download = 'split_documents.zip'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   // 通用文件下载函数
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
+  const downloadFile = (
+    content: string,
+    filename: string,
+    mimeType: string
+  ) => {
     const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
