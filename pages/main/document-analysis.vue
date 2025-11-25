@@ -257,6 +257,105 @@
                 当前文件不是DOCX格式
               </div>
 
+              <!-- 拆分进度显示 -->
+              <div v-if="isSplittingDocument" class="mt-4 space-y-4">
+                <!-- 进度卡片 -->
+                <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-6">
+                  <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg
+                        class="w-4 h-4 text-purple-600 animate-spin"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">文档拆分进行中</h3>
+                  </div>
+
+                  <!-- 总体进度 -->
+                  <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                      <span><strong>总体进度</strong></span>
+                      <span>{{ splitProgress.completed }}/{{ splitProgress.total }} 文件</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                      <div
+                        class="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full transition-all duration-500"
+                        :style="{ width: `${splitProgress.percentage}%` }"
+                      ></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">{{ splitProgress.percentage }}%</div>
+                  </div>
+
+                  <!-- 当前文件进度 -->
+                  <div v-if="currentFileProgress.fileIndex > 0" class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                      <span><strong>当前任务：第{{ currentFileProgress.fileIndex }}个</strong></span>
+                      <span>{{ currentFileProgress.step }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-300"
+                        :style="{ width: `${currentFileProgress.percentage}%` }"
+                      ></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">{{ currentFileProgress.percentage }}%</div>
+                  </div>
+
+                  <!-- 实时统计 -->
+                  <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-purple-50 p-4 rounded-lg text-center">
+                      <div class="text-2xl font-bold text-purple-600">{{ splitProgress.completed }}</div>
+                      <div class="text-sm text-gray-600">已完成</div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg text-center">
+                      <div class="text-2xl font-bold text-blue-600">{{ splitProgress.total }}</div>
+                      <div class="text-sm text-gray-600">总数</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg text-center">
+                      <div class="text-lg font-bold text-green-600">
+                        {{ getCurrentPhase() }}
+                      </div>
+                      <div class="text-sm text-gray-600">当前阶段</div>
+                    </div>
+                  </div>
+
+                  <!-- 详细日志 -->
+                  <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold mb-2 flex items-center">
+                      <svg class="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      </svg>
+                      处理日志
+                    </h4>
+                    <div class="max-h-48 overflow-y-auto bg-white rounded border p-3">
+                      <div class="space-y-1 font-mono text-xs">
+                        <div
+                          v-for="(log, index) in progressLogs"
+                          :key="index"
+                          class="text-gray-700"
+                          :class="{
+                            'text-green-600': log.includes('完成') || log.includes('成功'),
+                            'text-red-600': log.includes('错误') || log.includes('失败'),
+                            'text-blue-600': log.includes('开始') || log.includes('正在')
+                          }"
+                        >
+                          [{{ formatTime(new Date()) }}] {{ log }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- 拆分结果 -->
               <div v-if="splitResult" class="mt-4 space-y-3">
                 <div
@@ -845,6 +944,23 @@
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // 获取当前阶段
+  const getCurrentPhase = () => {
+    if (currentFileProgress.value.step.includes('ZIP') || currentFileProgress.value.step.includes('打包')) {
+      return '打包中'
+    } else if (currentFileProgress.value.step.includes('完成')) {
+      return '已完成'
+    } else if (splitProgress.value.completed > 0) {
+      return '拆分中'
+    } else {
+      return '准备中'
+    }
+  }
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString()
   }
 
   const analyzeDocument = async () => {
