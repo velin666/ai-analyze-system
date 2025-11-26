@@ -5,13 +5,20 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
+    "dev:with-libreoffice": "node scripts/start-with-libreoffice.js",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop ecosystem.config.cjs",
     "pm2:restart": "pm2 restart ecosystem.config.cjs",
-    "pm2:delete": "pm2 delete ecosystem.config.cjs"
+    "pm2:delete": "pm2 delete ecosystem.config.cjs",
+    "pm2:logs": "pm2 logs",
+    "pm2:status": "pm2 status",
+    "libreoffice:start": "node scripts/libreoffice-service.js start",
+    "libreoffice:stop": "node scripts/libreoffice-service.js stop",
+    "libreoffice:status": "node scripts/libreoffice-service.js status",
+    "libreoffice:restart": "node scripts/libreoffice-service.js restart"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",

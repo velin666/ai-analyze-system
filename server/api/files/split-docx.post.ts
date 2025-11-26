@@ -28,8 +28,8 @@ export default defineEventHandler(async (event) => {
     // 确保输出目录存在
     await fs.mkdir(outputDir, { recursive: true })
 
-    // 构建Python脚本命令
-    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages.py')
+    // 构建Python脚本命令 - 使用跨平台统一脚本
+    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages_unified.py')
     const command = `python "${scriptPath}" "${inputPath}" "${outputDir}" ${pagesPerFile}`
 
     console.log(`执行命令: ${command}`)

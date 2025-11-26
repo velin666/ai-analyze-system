@@ -37,8 +37,10 @@ export default defineEventHandler(async (event) => {
 
     sendMessage('info', { message: '开始处理文件...' })
 
-    // 构建Python脚本命令
-    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages.py')
+    // 构建Python脚本命令 - 使用跨平台统一脚本
+    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages_unified.py')
+
+    sendMessage('info', { message: '检测平台并初始化处理器...' })
 
     // 启动Python进程
     const pythonProcess = spawn('python', [
