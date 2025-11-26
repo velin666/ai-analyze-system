@@ -23,9 +23,15 @@ def get_platform_handler():
     # Linux 或 macOS，或 Windows 但没有 win32com
     try:
         import uno
-        print(f"✓ 检测到 {system} 平台，使用 LibreOffice")
-        from split_docx_pages_libreoffice import split_docx_by_pages_libreoffice
-        return split_docx_by_pages_libreoffice, 'libreoffice'
+        print(f"✓ 检测到 {system} 平台，使用 LibreOffice (兼容版本)")
+        # 优先使用兼容性更好的 v2 版本
+        try:
+            from split_docx_pages_libreoffice_v2 import split_docx_by_pages_simple
+            return split_docx_by_pages_simple, 'libreoffice_v2'
+        except ImportError:
+            # 回退到原版本
+            from split_docx_pages_libreoffice import split_docx_by_pages_libreoffice
+            return split_docx_by_pages_libreoffice, 'libreoffice_v1'
     except ImportError:
         print(f"错误: 未找到可用的 DOCX 处理库")
         print(f"  - Windows: 请安装 pywin32 (pip install pywin32)")

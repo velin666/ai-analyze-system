@@ -1,5 +1,14 @@
 # Linux 环境故障排查指南
 
+## ⚡ 遇到连接错误？
+
+**错误**: "Connection refused" 或 "couldn't connect to socket"
+
+👉 **快速修复**: 查看 [FIX_LIBREOFFICE_CONNECTION.md](./FIX_LIBREOFFICE_CONNECTION.md) - 3 步解决方案  
+👉 **超快参考**: 查看 [QUICK_FIX_LIBREOFFICE.md](../QUICK_FIX_LIBREOFFICE.md)
+
+---
+
 ## 🚨 常见错误：Python 脚本退出，代码: 1
 
 这个错误表示 Python 脚本执行失败。按以下步骤诊断和修复：

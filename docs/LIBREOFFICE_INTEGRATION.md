@@ -379,7 +379,17 @@ const libreofficeApps = [2002, 2003, 2004].map(port => ({
 
 ## 📞 获取帮助
 
-- 查看详细文档: [CROSS_PLATFORM_DEPLOYMENT.md](./CROSS_PLATFORM_DEPLOYMENT.md)
+### 遇到连接错误？
+
+如果遇到 "Connection refused" 错误：
+
+- **快速修复**: 查看 [QUICK_FIX_LIBREOFFICE.md](../QUICK_FIX_LIBREOFFICE.md) - 3 步解决
+- **详细排查**: 查看 [FIX_LIBREOFFICE_CONNECTION.md](./FIX_LIBREOFFICE_CONNECTION.md) - 完整诊断指南
+- **Linux 问题**: 查看 [LINUX_TROUBLESHOOTING.md](./LINUX_TROUBLESHOOTING.md)
+
+### 其他资源
+
+- 跨平台部署: [CROSS_PLATFORM_DEPLOYMENT.md](./CROSS_PLATFORM_DEPLOYMENT.md)
 - PM2 文档: https://pm2.keymetrics.io/
 - LibreOffice UNO: https://api.libreoffice.org/
 
