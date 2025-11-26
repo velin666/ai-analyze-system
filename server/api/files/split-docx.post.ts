@@ -7,7 +7,7 @@ import AdmZip from 'adm-zip'
 const execAsync = promisify(exec)
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
     const body = await readBody(event)
     const { fileId, pagesPerFile = 30 } = body
@@ -15,11 +15,13 @@ export default defineEventHandler(async (event) => {
     if (!fileId) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少文件ID'
+        statusMessage: '缺少文件ID',
       })
     }
 
-    console.log(`开始拆分DOCX文档，文件ID: ${fileId}, 每个文件页数: ${pagesPerFile}`)
+    console.log(
+      `开始拆分DOCX文档，文件ID: ${fileId}, 每个文件页数: ${pagesPerFile}`
+    )
 
     // 模拟获取文件信息 (实际项目中需要从数据库获取)
     const inputPath = join(UPLOAD_DIR, `${fileId}.docx`)
@@ -29,19 +31,48 @@ export default defineEventHandler(async (event) => {
     await fs.mkdir(outputDir, { recursive: true })
 
     // 构建Python脚本命令 - 使用跨平台统一脚本
-    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages_unified.py')
+    const scriptPath = join(
+      process.cwd(),
+      'server',
+      'api',
+      'files',
+      'split_docx_pages_unified.py'
+    )
     const command = `python "${scriptPath}" "${inputPath}" "${outputDir}" ${pagesPerFile}`
 
     console.log(`执行命令: ${command}`)
 
     // 执行Python脚本
-    const { stdout, stderr } = await execAsync(command, {
-      timeout: 300000 // 5分钟超时
-    })
+    let stdout = ''
+    let stderr = ''
 
-    console.log('Python 脚本输出:', stdout)
-    if (stderr) {
-      console.warn('Python 脚本警告:', stderr)
+    try {
+      const result = await execAsync(command, {
+        timeout: 300000, // 5分钟超时
+      })
+      stdout = result.stdout
+      stderr = result.stderr
+
+      console.log('Python 脚本输出:', stdout)
+      if (stderr) {
+        console.warn('Python 脚本警告:', stderr)
+      }
+    } catch (error: any) {
+      console.error('='.repeat(60))
+      console.error('Python 脚本执行失败')
+      console.error('='.repeat(60))
+      console.error('命令:', command)
+      console.error('错误:', error.message)
+      if (error.stdout) {
+        console.error('\n标准输出 (stdout):')
+        console.error(error.stdout)
+      }
+      if (error.stderr) {
+        console.error('\n标准错误 (stderr):')
+        console.error(error.stderr)
+      }
+      console.error('='.repeat(60))
+      throw error
     }
 
     // 读取输出目录中的文件
@@ -51,7 +82,7 @@ export default defineEventHandler(async (event) => {
     if (docxFiles.length === 0) {
       throw createError({
         statusCode: 500,
-        statusMessage: '拆分失败，未生成任何文件'
+        statusMessage: '拆分失败，未生成任何文件',
       })
     }
 
@@ -76,14 +107,13 @@ export default defineEventHandler(async (event) => {
       pagesPerFile,
       files: docxFiles,
       downloadUrl,
-      message: `成功拆分为 ${docxFiles.length} 个文件`
+      message: `成功拆分为 ${docxFiles.length} 个文件`,
     }
-
   } catch (error: any) {
     console.error('DOCX split error:', error.message)
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || '拆分失败'
+      statusMessage: error.message || '拆分失败',
     })
   }
 })

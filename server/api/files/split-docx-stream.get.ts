@@ -3,7 +3,7 @@ import { promises as fs } from 'fs'
 import { spawn } from 'child_process'
 import AdmZip from 'adm-zip'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const query = getQuery(event)
   const { fileId, pagesPerFile = 30 } = query
   const pages = parseInt(pagesPerFile as string) || 30
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   if (!fileId) {
     throw createError({
       statusCode: 400,
-      statusMessage: '缺少文件ID'
+      statusMessage: '缺少文件ID',
     })
   }
 
@@ -38,26 +38,34 @@ export default defineEventHandler(async (event) => {
     sendMessage('info', { message: '开始处理文件...' })
 
     // 构建Python脚本命令 - 使用跨平台统一脚本
-    const scriptPath = join(process.cwd(), 'server', 'api', 'files', 'split_docx_pages_unified.py')
+    const scriptPath = join(
+      process.cwd(),
+      'server',
+      'api',
+      'files',
+      'split_docx_pages_unified.py'
+    )
 
     sendMessage('info', { message: '检测平台并初始化处理器...' })
 
     // 启动Python进程
-    const pythonProcess = spawn('python', [
-      scriptPath,
-      inputPath,
-      outputDir,
-      pages.toString()
-    ], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
+    const pythonProcess = spawn(
+      'python',
+      [scriptPath, inputPath, outputDir, pages.toString()],
+      {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }
+    )
 
     let totalFiles = 0
     let currentFileIndex = 0
+    let stdoutBuffer = ''
+    let stderrBuffer = ''
 
     // 处理Python输出
     pythonProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString().trim()
+      stdoutBuffer += output + '\n'
       const lines = output.split('\n')
 
       for (const line of lines) {
@@ -74,7 +82,7 @@ export default defineEventHandler(async (event) => {
                 totalFiles = parseInt(parts[2])
                 sendMessage('progress', {
                   type: 'total_files',
-                  total: totalFiles
+                  total: totalFiles,
                 })
                 break
 
@@ -83,7 +91,7 @@ export default defineEventHandler(async (event) => {
                 sendMessage('progress', {
                   type: 'file_start',
                   current: currentFileIndex,
-                  total: totalFiles
+                  total: totalFiles,
                 })
                 break
 
@@ -95,7 +103,7 @@ export default defineEventHandler(async (event) => {
                   type: 'file_step',
                   fileIndex,
                   step,
-                  percentage
+                  percentage,
                 })
                 break
 
@@ -104,7 +112,7 @@ export default defineEventHandler(async (event) => {
                 sendMessage('progress', {
                   type: 'file_complete',
                   completed: completedIndex,
-                  total: totalFiles
+                  total: totalFiles,
                 })
                 break
 
@@ -113,7 +121,7 @@ export default defineEventHandler(async (event) => {
                 const errorMsg = parts.slice(3).join(':')
                 sendMessage('error', {
                   fileIndex: errorIndex,
-                  message: errorMsg
+                  message: errorMsg,
                 })
                 break
 
@@ -123,9 +131,11 @@ export default defineEventHandler(async (event) => {
                 sendMessage('progress', {
                   type: 'all_complete',
                   completed: completedFiles,
-                  total: totalFilesFromPython
+                  total: totalFilesFromPython,
                 })
-                sendMessage('info', { message: '所有文件拆分完成，开始创建ZIP...' })
+                sendMessage('info', {
+                  message: '所有文件拆分完成，开始创建ZIP...',
+                })
                 break
             }
           } else {
@@ -138,6 +148,7 @@ export default defineEventHandler(async (event) => {
 
     pythonProcess.stderr?.on('data', (data: Buffer) => {
       const error = data.toString().trim()
+      stderrBuffer += error + '\n'
       console.error('Python错误:', error)
       sendMessage('error', { message: error })
     })
@@ -148,7 +159,23 @@ export default defineEventHandler(async (event) => {
         if (code === 0) {
           resolve()
         } else {
-          reject(new Error(`Python脚本退出，代码: ${code}`))
+          console.error('='.repeat(60))
+          console.error('Python 脚本执行失败')
+          console.error('='.repeat(60))
+          console.error('退出代码:', code)
+          console.error(
+            '命令:',
+            `python ${scriptPath} ${inputPath} ${outputDir} ${pages}`
+          )
+          console.error('\n标准输出 (stdout):')
+          console.error(stdoutBuffer || '(无输出)')
+          console.error('\n标准错误 (stderr):')
+          console.error(stderrBuffer || '(无错误输出)')
+          console.error('='.repeat(60))
+
+          const errorMsg =
+            stderrBuffer || stdoutBuffer || `Python脚本退出，代码: ${code}`
+          reject(new Error(errorMsg))
         }
       })
 
@@ -177,7 +204,7 @@ export default defineEventHandler(async (event) => {
     sendMessage('info', { message: '正在创建ZIP文件...' })
     sendMessage('progress', {
       type: 'zip_start',
-      total: docxFiles.length
+      total: docxFiles.length,
     })
 
     const zip = new AdmZip()
@@ -194,7 +221,7 @@ export default defineEventHandler(async (event) => {
         current: i + 1,
         total: docxFiles.length,
         percentage: zipProgress,
-        fileName: docxFile
+        fileName: docxFile,
       })
 
       // 模拟一点延迟，让用户能看到进度
@@ -218,13 +245,12 @@ export default defineEventHandler(async (event) => {
       pagesPerFile: pages,
       files: docxFiles,
       downloadUrl,
-      message: `成功拆分为 ${docxFiles.length} 个文件`
+      message: `成功拆分为 ${docxFiles.length} 个文件`,
     })
-
   } catch (error: any) {
     console.error('拆分错误:', error.message)
     sendMessage('error', {
-      message: error.message || '拆分失败'
+      message: error.message || '拆分失败',
     })
   }
 

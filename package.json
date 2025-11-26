@@ -18,7 +18,9 @@
     "libreoffice:start": "node scripts/libreoffice-service.js start",
     "libreoffice:stop": "node scripts/libreoffice-service.js stop",
     "libreoffice:status": "node scripts/libreoffice-service.js status",
-    "libreoffice:restart": "node scripts/libreoffice-service.js restart"
+    "libreoffice:restart": "node scripts/libreoffice-service.js restart",
+    "diagnose:linux": "bash scripts/diagnose-linux.sh",
+    "test:cross-platform": "python test_cross_platform.py"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
