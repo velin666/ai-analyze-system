@@ -22,7 +22,8 @@
     "diagnose:linux": "bash scripts/diagnose-linux.sh",
     "test:cross-platform": "python test_cross_platform.py",
     "test:libreoffice-fix": "python3 test_libreoffice_fix.py",
-    "verify:libreoffice-24x": "python3 verify_libreoffice_24x.py"
+    "verify:libreoffice-24x": "python3 verify_libreoffice_24x.py",
+    "diagnose:timeout": "python3 diagnose_timeout_issue.py"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
