@@ -34,10 +34,10 @@ pnpm libreoffice:start
 pnpm libreoffice:status
 ```
 
-### Step 3: 测试修复效果
+### Step 3: 运行诊断
 
 ```bash
-pnpm test:libreoffice-fix
+pnpm diagnose:linux
 ```
 
 ### Step 4: 验证文档拆分
@@ -82,7 +82,6 @@ ai-analyze-system/
 │   └── diagnose-linux.sh                      # 🔄 自动诊断
 ├── QUICK_FIX_LIBREOFFICE.md                   # 🆕 快速参考
 ├── LIBREOFFICE_ERROR_SOLUTION.md              # 🆕 完整解决方案
-├── test_libreoffice_fix.py                    # 🆕 修复验证测试
 └── start-libreoffice-quick.sh                 # 🆕 应急启动脚本
 ```
 
@@ -121,8 +120,8 @@ pnpm diagnose:linux
 pnpm libreoffice:status
 pnpm libreoffice:restart
 
-# 测试修复
-pnpm test:libreoffice-fix
+# 运行诊断
+pnpm diagnose:linux
 ```
 
 ## 📊 兼容性矩阵
@@ -143,9 +142,9 @@ pnpm test:libreoffice-fix
 pnpm libreoffice:status
 # 应该显示：✓ 服务正在运行
 
-# 2. 运行修复测试
-pnpm test:libreoffice-fix
-# 应该显示：🎉 所有测试通过
+# 2. 运行系统诊断
+pnpm diagnose:linux
+# 应该显示：✅ 所有检查通过
 
 # 3. 测试实际拆分功能
 # 上传 DOCX 文件并尝试拆分
@@ -194,6 +193,6 @@ pnpm pm2:start
 ✅ **智能故障诊断** - 自动检测和修复建议  
 ✅ **兼容性保证** - 支持多种 LibreOffice 版本  
 ✅ **详细文档** - 从快速修复到深度排查  
-✅ **测试验证** - 确保修复有效性
+✅ **系统诊断** - 确保修复有效性
 
 **下次遇到 LibreOffice 相关问题，只需查看对应文档并运行相关命令即可快速解决！** 🚀

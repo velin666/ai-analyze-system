@@ -22,24 +22,24 @@ pnpm libreoffice:status
 # 2️⃣ 重启 LibreOffice 服务
 pnpm libreoffice:restart
 
-# 3️⃣ 诊断超时问题
-pnpm diagnose:timeout
+# 3️⃣ 运行诊断
+pnpm diagnose:linux
 ```
 
-## 🛠️ 深度诊断
+## 深度诊断
 
-### 运行专用诊断脚本
+### 运行系统诊断
 
 ```bash
-pnpm diagnose:timeout
+pnpm diagnose:linux
 ```
 
 该脚本会检查：
 
-- ✅ LibreOffice 进程状态
-- ✅ 端口 2002 监听状态
-- ✅ UNO 连接测试（5 秒超时）
-- ✅ 脚本基本执行能力
+- LibreOffice 安装状态
+- Python UNO 依赖
+- 端口 2002 监听状态
+- 服务运行状态
 
 ### 常见诊断结果
 
@@ -197,7 +197,7 @@ chmod +x start-libreoffice-quick.sh
 #!/bin/bash
 # monitor-libreoffice.sh
 
-if ! pnpm diagnose:timeout >/dev/null 2>&1; then
+if ! pnpm libreoffice:status >/dev/null 2>&1; then
     echo "LibreOffice 异常，正在重启..."
     pnpm libreoffice:restart
 
@@ -215,9 +215,9 @@ fi
 pnpm libreoffice:status
 # 应该显示：✅ 服务正在运行
 
-# 2. 测试连接
-pnpm diagnose:timeout
-# 应该显示：✅ LibreOffice 连接成功
+# 2. 运行诊断
+pnpm diagnose:linux
+# 应该显示：✅ 所有检查通过
 
 # 3. 重新尝试文档拆分
 # 上传 DOCX 文件并测试拆分功能
@@ -241,4 +241,4 @@ pnpm diagnose:timeout
 ✅ **详细错误提示** - 提供具体解决方案  
 ✅ **多重备用方案** - 确保服务可用性
 
-下次遇到超时问题，运行 `pnpm diagnose:timeout` 即可快速诊断和解决！🚀
+下次遇到超时问题，运行 `pnpm diagnose:linux` 即可快速诊断和解决！🚀

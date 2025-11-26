@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev --host 0.0.0.0",
+    "dev": "nuxt dev --host 0.0.0.0 --port 5200",
     "dev:with-libreoffice": "node scripts/start-with-libreoffice.js",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -19,11 +19,7 @@
     "libreoffice:stop": "node scripts/libreoffice-service.js stop",
     "libreoffice:status": "node scripts/libreoffice-service.js status",
     "libreoffice:restart": "node scripts/libreoffice-service.js restart",
-    "diagnose:linux": "bash scripts/diagnose-linux.sh",
-    "test:cross-platform": "python test_cross_platform.py",
-    "test:libreoffice-fix": "python3 test_libreoffice_fix.py",
-    "verify:libreoffice-24x": "python3 verify_libreoffice_24x.py",
-    "diagnose:timeout": "python3 diagnose_timeout_issue.py"
+    "diagnose:linux": "bash scripts/diagnose-linux.sh"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",

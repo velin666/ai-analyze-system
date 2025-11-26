@@ -23,13 +23,6 @@ netstat -tuln | grep 2002
 
 ---
 
-## 🎯 LibreOffice 24.x 专用验证
-
-```bash
-# 专门验证 24.x 版本兼容性
-pnpm verify:libreoffice-24x
-```
-
 ---
 
 ## 📋 如果还是不行
