@@ -260,9 +260,13 @@
               <!-- 拆分进度显示 -->
               <div v-if="isSplittingDocument" class="mt-4 space-y-4">
                 <!-- 进度卡片 -->
-                <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-6">
+                <div
+                  class="bg-white rounded-xl shadow-sm border border-purple-200 p-6"
+                >
                   <div class="flex items-center space-x-3 mb-4">
-                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <div
+                      class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center"
+                    >
                       <svg
                         class="w-4 h-4 text-purple-600 animate-spin"
                         fill="none"
@@ -277,14 +281,23 @@
                         />
                       </svg>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">文档拆分进行中</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">
+                      文档拆分进行中
+                    </h3>
                   </div>
 
                   <!-- 总体进度 -->
                   <div class="mb-6">
-                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                    <div
+                      class="flex justify-between text-sm text-gray-600 mb-2"
+                    >
                       <span><strong>总体进度</strong></span>
-                      <span>{{ splitProgress.completed }}/{{ splitProgress.total }} 文件</span>
+                      <span
+                        >{{ splitProgress.completed }}/{{
+                          splitProgress.total
+                        }}
+                        文件</span
+                      >
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
                       <div
@@ -292,13 +305,23 @@
                         :style="{ width: `${splitProgress.percentage}%` }"
                       ></div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ splitProgress.percentage }}%</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      {{ splitProgress.percentage }}%
+                    </div>
                   </div>
 
                   <!-- 当前文件进度 -->
                   <div v-if="currentFileProgress.fileIndex > 0" class="mb-6">
-                    <div class="flex justify-between text-sm text-gray-600 mb-2">
-                      <span><strong>当前任务：第{{ currentFileProgress.fileIndex }}个</strong></span>
+                    <div
+                      class="flex justify-between text-sm text-gray-600 mb-2"
+                    >
+                      <span
+                        ><strong
+                          >当前任务：第{{
+                            currentFileProgress.fileIndex
+                          }}个</strong
+                        ></span
+                      >
                       <span>{{ currentFileProgress.step }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
@@ -307,17 +330,23 @@
                         :style="{ width: `${currentFileProgress.percentage}%` }"
                       ></div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ currentFileProgress.percentage }}%</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      {{ currentFileProgress.percentage }}%
+                    </div>
                   </div>
 
                   <!-- 实时统计 -->
                   <div class="grid grid-cols-3 gap-4 mb-6">
                     <div class="bg-purple-50 p-4 rounded-lg text-center">
-                      <div class="text-2xl font-bold text-purple-600">{{ splitProgress.completed }}</div>
+                      <div class="text-2xl font-bold text-purple-600">
+                        {{ splitProgress.completed }}
+                      </div>
                       <div class="text-sm text-gray-600">已完成</div>
                     </div>
                     <div class="bg-blue-50 p-4 rounded-lg text-center">
-                      <div class="text-2xl font-bold text-blue-600">{{ splitProgress.total }}</div>
+                      <div class="text-2xl font-bold text-blue-600">
+                        {{ splitProgress.total }}
+                      </div>
                       <div class="text-sm text-gray-600">总数</div>
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg text-center">
@@ -331,21 +360,36 @@
                   <!-- 详细日志 -->
                   <div class="bg-gray-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold mb-2 flex items-center">
-                      <svg class="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      <svg
+                        class="w-4 h-4 mr-2 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
                       </svg>
                       处理日志
                     </h4>
-                    <div class="max-h-48 overflow-y-auto bg-white rounded border p-3">
+                    <div
+                      class="max-h-48 overflow-y-auto bg-white rounded border p-3"
+                    >
                       <div class="space-y-1 font-mono text-xs">
                         <div
                           v-for="(log, index) in progressLogs"
                           :key="index"
                           class="text-gray-700"
                           :class="{
-                            'text-green-600': log.includes('完成') || log.includes('成功'),
-                            'text-red-600': log.includes('错误') || log.includes('失败'),
-                            'text-blue-600': log.includes('开始') || log.includes('正在')
+                            'text-green-600':
+                              log.includes('完成') || log.includes('成功'),
+                            'text-red-600':
+                              log.includes('错误') || log.includes('失败'),
+                            'text-blue-600':
+                              log.includes('开始') || log.includes('正在'),
                           }"
                         >
                           [{{ formatTime(new Date()) }}] {{ log }}
@@ -948,7 +992,10 @@
 
   // 获取当前阶段
   const getCurrentPhase = () => {
-    if (currentFileProgress.value.step.includes('ZIP') || currentFileProgress.value.step.includes('打包')) {
+    if (
+      currentFileProgress.value.step.includes('ZIP') ||
+      currentFileProgress.value.step.includes('打包')
+    ) {
       return '打包中'
     } else if (currentFileProgress.value.step.includes('完成')) {
       return '已完成'
@@ -968,6 +1015,145 @@
     progress.value = 0
     analysisResult.value = null
 
+    try {
+      // 如果是文件上传，使用新的 Coze 工作流
+      if (selectedFile.value) {
+        await analyzeWithCozeWorkflow()
+      } else {
+        // 文本输入使用原有方法
+        await analyzeWithCozeAPI()
+      }
+    } catch (error: any) {
+      console.error('分析失败:', error)
+      alert(error.message || '分析失败，请重试')
+      // 显示模拟结果用于演示
+      showMockResult()
+    } finally {
+      isAnalyzing.value = false
+    }
+  }
+
+  // 使用 Coze 工作流分析（文件上传）
+  const analyzeWithCozeWorkflow = async () => {
+    if (!selectedFile.value) return
+
+    // 步骤 1: 上传文件到 Coze
+    currentStep.value = '正在上传文件到 Coze...'
+    progress.value = 20
+
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+
+    const uploadResponse = await $fetch('/api/coze/upload-file', {
+      method: 'POST',
+      body: formData,
+    })
+
+    const fileId = (uploadResponse as any).fileId
+    currentStep.value = '文件上传完成，正在触发工作流...'
+    progress.value = 40
+
+    // 步骤 2: 触发工作流
+    const workflowResponse = await $fetch('/api/coze/trigger-workflow', {
+      method: 'POST',
+      body: { fileId },
+    })
+
+    const executeId = (workflowResponse as any).executeId
+    currentStep.value = '工作流已触发，正在分析文档...'
+    progress.value = 60
+
+    // 步骤 3: 轮询工作流状态
+    await pollWorkflowStatus(executeId)
+  }
+
+  // 轮询工作流状态
+  const pollWorkflowStatus = async (executeId: string) => {
+    const maxAttempts = 60 // 最多轮询60次
+    const pollInterval = 3000 // 每3秒轮询一次
+    let attempts = 0
+
+    while (attempts < maxAttempts) {
+      attempts++
+
+      try {
+        const statusResponse = await $fetch(
+          `/api/coze/workflow-status?executeId=${executeId}`
+        )
+        const status = (statusResponse as any).status
+
+        if (status === 'succeeded') {
+          // 工作流成功完成
+          currentStep.value = '分析完成，正在生成报告...'
+          progress.value = 100
+
+          // 处理输出结果
+          const output = (statusResponse as any).output
+          analysisResult.value = processWorkflowOutput(output)
+          return
+        } else if (status === 'failed') {
+          // 工作流失败
+          const errorMsg =
+            (statusResponse as any).errorMessage || '工作流执行失败'
+          throw new Error(errorMsg)
+        } else if (status === 'running') {
+          // 工作流仍在运行，更新进度
+          currentStep.value = `正在分析文档... (${attempts}/${maxAttempts})`
+          progress.value = 60 + (attempts / maxAttempts) * 30
+
+          // 等待后继续轮询
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+      } catch (error) {
+        console.error('查询工作流状态失败:', error)
+        throw error
+      }
+    }
+
+    // 超时
+    throw new Error('工作流执行超时，请稍后重试')
+  }
+
+  // 处理工作流输出
+  const processWorkflowOutput = (output: any) => {
+    // 根据实际的工作流输出格式进行解析
+    // 这里需要根据你的 Coze 工作流实际输出的格式来调整
+    try {
+      // 假设工作流返回的是 JSON 格式的分析结果
+      const result = typeof output === 'string' ? JSON.parse(output) : output
+
+      return {
+        missingCount: result.missing_fields?.length || 0,
+        errorCount: result.text_errors?.length || 0,
+        formatCount: result.format_issues?.length || 0,
+        imageCount: result.missing_images?.length || 0,
+        missingFields: result.missing_fields || [],
+        textErrors: result.text_errors || [],
+        formatIssues: result.format_issues || [],
+        missingImages: result.missing_images || [],
+        summary: result.summary || '文档分析完成',
+        score: result.quality_score || 85,
+      }
+    } catch (error) {
+      console.error('解析工作流输出失败:', error)
+      // 返回原始输出
+      return {
+        missingCount: 0,
+        errorCount: 0,
+        formatCount: 0,
+        imageCount: 0,
+        missingFields: [],
+        textErrors: [],
+        formatIssues: [],
+        missingImages: [],
+        summary: output || '文档分析完成',
+        score: 85,
+      }
+    }
+  }
+
+  // 使用原有 API 分析（文本输入）
+  const analyzeWithCozeAPI = async () => {
     const steps = [
       '正在读取文档内容...',
       '正在进行AI语义分析...',
@@ -982,16 +1168,7 @@
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
 
-    // 调用Coze API进行分析
-    try {
-      await callCozeAPI()
-    } catch (error) {
-      console.error('分析失败:', error)
-      // 显示模拟结果
-      showMockResult()
-    }
-
-    isAnalyzing.value = false
+    await callCozeAPI()
   }
 
   const callCozeAPI = async () => {
