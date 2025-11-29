@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 为每个拆分文件生成可访问的URL
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+    const baseUrl = event.node.req.headers.origin || 'http://localhost:3000'
     const fileUrls = docxFiles.map((fileName) => {
       // 使用相对路径: split_${fileId}/${fileName}
       const encodedPath = encodeURIComponent(`split_${fileId}/${fileName}`)

@@ -14,6 +14,8 @@ export default defineNuxtConfig({
       Inter: [400, 500, 600, 700],
       'JetBrains Mono': [400, 500, 600],
     },
+    download: false, // 禁用字体下载，使用 CDN 链接
+    inject: true,
   },
   nuxt3WinstonLog: {
     maxSize: '1024m',

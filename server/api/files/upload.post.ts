@@ -50,8 +50,7 @@ export default defineEventHandler(async (event) => {
     await fs.rename(uploadedFile.filepath, newFilePath)
     
     // Create file info with URL
-    const config = useRuntimeConfig()
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+    const baseUrl = event.node.req.headers.origin || 'http://localhost:3000'
     const fileUrl = `${baseUrl}/api/files/download/${fileId}`
     
     const fileInfo: FileInfo = {
