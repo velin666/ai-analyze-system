@@ -49,7 +49,11 @@ export default defineEventHandler(async (event) => {
     
     await fs.rename(uploadedFile.filepath, newFilePath)
     
-    // Create file info
+    // Create file info with URL
+    const config = useRuntimeConfig()
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+    const fileUrl = `${baseUrl}/api/files/download/${fileId}`
+    
     const fileInfo: FileInfo = {
       id: fileId,
       name: newFileName,
@@ -58,7 +62,8 @@ export default defineEventHandler(async (event) => {
       type: mimeType,
       category: getFileCategory(mimeType),
       uploadedAt: new Date(),
-      path: newFilePath
+      path: newFilePath,
+      url: fileUrl
     }
     
     // Save file metadata (in a real app, you'd use a database)

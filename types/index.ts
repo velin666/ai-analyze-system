@@ -7,6 +7,7 @@ export interface FileInfo {
   category: FileCategory
   uploadedAt: Date
   path: string
+  url?: string
   preview?: string
   analysis?: FileAnalysis
   errors?: FileError[]

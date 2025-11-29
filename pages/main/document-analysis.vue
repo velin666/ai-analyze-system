@@ -914,6 +914,8 @@
 </template>
 
 <script setup lang="ts">
+import { CozeAPI } from '@coze/api';
+
   // 页面标题
   definePageMeta({
     title: 'AI文档分析',
@@ -1037,34 +1039,92 @@
   const analyzeWithCozeWorkflow = async () => {
     if (!selectedFile.value) return
 
-    // 步骤 1: 上传文件到 Coze
-    currentStep.value = '正在上传文件到 Coze...'
-    progress.value = 20
+    try {
+      let fileUrls: string[] = []
 
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
+      // 检查是否有拆分文档
+      if (splitResult.value && splitResult.value.files && splitResult.value.files.length > 0) {
+        // 有拆分文档，获取拆分文件的URL列表
+        currentStep.value = `正在获取 ${splitResult.value.files.length} 个拆分文件的URL...`
+        progress.value = 10
 
-    const uploadResponse = await $fetch('/api/coze/upload-file', {
-      method: 'POST',
-      body: formData,
-    })
+        try {
+          // 从拆分结果中获取文件ID（需要保存在拆分时）
+          // 假设在拆分时我们保存了原始文件的ID
+          const originalFileId = splitResult.value.fileId
 
-    const fileId = (uploadResponse as any).fileId
-    currentStep.value = '文件上传完成，正在触发工作流...'
-    progress.value = 40
+          if (!originalFileId) {
+            throw new Error('拆分结果中缺少文件ID，请重新拆分文档')
+          }
 
-    // 步骤 2: 触发工作流
-    const workflowResponse = await $fetch('/api/coze/trigger-workflow', {
-      method: 'POST',
-      body: { fileId },
-    })
+          const urlResponse = await $fetch<any>('/api/files/split-and-get-urls', {
+            method: 'POST',
+            body: { fileId: originalFileId },
+          })
 
-    const executeId = (workflowResponse as any).executeId
-    currentStep.value = '工作流已触发，正在分析文档...'
-    progress.value = 60
+          if (!urlResponse || !urlResponse.fileUrls || urlResponse.fileUrls.length === 0) {
+            throw new Error('获取拆分文件URL失败')
+          }
 
-    // 步骤 3: 轮询工作流状态
-    await pollWorkflowStatus(executeId)
+          fileUrls = urlResponse.fileUrls
+          console.log(`成功获取 ${fileUrls.length} 个拆分文件的URL`)
+        } catch (error: any) {
+          console.error('获取拆分文件URL失败:', error)
+          alert(`获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`)
+          return
+        }
+      } else {
+        // 单个文件：上传到本地服务器
+        currentStep.value = '正在上传文件到服务器...'
+        progress.value = 20
+
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const uploadResponse = await $fetch<any>('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResponse || !uploadResponse.url) {
+          throw new Error('文件上传失败，未获取到文件URL')
+        }
+
+        fileUrls = [uploadResponse.url]
+        console.log('文件上传成功，URL:', uploadResponse.url)
+      }
+
+      // 调用Coze工作流
+      currentStep.value = '正在调用AI工作流分析...'
+      progress.value = 40
+
+      const workflowResponse = await $fetch<any>('/api/coze/workflow', {
+        method: 'POST',
+        body: {
+          fileUrls,
+          tableSummary: selectedFile.value.name
+        },
+      })
+
+      console.log('工作流分析响应:', workflowResponse)
+
+      // 处理分析结果
+      if (workflowResponse.success && workflowResponse.results) {
+        currentStep.value = '分析完成，正在生成报告...'
+        progress.value = 90
+
+        // 合并所有文件的分析结果
+        analysisResult.value = mergeAnalysisResults(workflowResponse.results)
+        
+        progress.value = 100
+        currentStep.value = '分析完成'
+      } else {
+        throw new Error('工作流分析失败')
+      }
+    } catch (error: any) {
+      console.error('Coze工作流分析失败:', error)
+      throw error
+    }
   }
 
   // 轮询工作流状态
@@ -1117,11 +1177,60 @@
   // 处理工作流输出
   const processWorkflowOutput = (output: any) => {
     // 根据实际的工作流输出格式进行解析
-    // 这里需要根据你的 Coze 工作流实际输出的格式来调整
     try {
-      // 假设工作流返回的是 JSON 格式的分析结果
       const result = typeof output === 'string' ? JSON.parse(output) : output
+      
+      // 如果后端已经解析好返回了content字段
+      if (result.success && result.content !== undefined) {
+        const content = result.content
+        
+        // 尝试解析content为JSON（如果content是JSON字符串）
+        let parsedContent = content
+        if (typeof content === 'string') {
+          try {
+            parsedContent = JSON.parse(content)
+          } catch {
+            // content不是JSON，保持原样
+            parsedContent = { rawContent: content }
+          }
+        }
 
+        // 如果parsedContent有结构化数据，使用它
+        if (parsedContent && typeof parsedContent === 'object') {
+          return {
+            missingCount: parsedContent.missing_fields?.length || 0,
+            errorCount: parsedContent.text_errors?.length || 0,
+            formatCount: parsedContent.format_issues?.length || 0,
+            imageCount: parsedContent.missing_images?.length || 0,
+            missingFields: parsedContent.missing_fields || [],
+            textErrors: parsedContent.text_errors || [],
+            formatIssues: parsedContent.format_issues || [],
+            missingImages: parsedContent.missing_images || [],
+            summary: parsedContent.summary || parsedContent.rawContent || content || '文档分析完成',
+            score: parsedContent.quality_score || 85,
+            usage: result.usage,  // 保留使用量信息
+            rawContent: content,  // 保留原始content
+          }
+        }
+        
+        // 如果content是纯文本，作为summary展示
+        return {
+          missingCount: 0,
+          errorCount: 0,
+          formatCount: 0,
+          imageCount: 0,
+          missingFields: [],
+          textErrors: [],
+          formatIssues: [],
+          missingImages: [],
+          summary: content || '文档分析完成',
+          score: 85,
+          usage: result.usage,
+          rawContent: content,
+        }
+      }
+
+      // 兼容旧格式
       return {
         missingCount: result.missing_fields?.length || 0,
         errorCount: result.text_errors?.length || 0,
@@ -1146,10 +1255,83 @@
         textErrors: [],
         formatIssues: [],
         missingImages: [],
-        summary: output || '文档分析完成',
+        summary: typeof output === 'string' ? output : JSON.stringify(output) || '文档分析完成',
         score: 85,
       }
     }
+  }
+
+  // 合并多个文件的分析结果
+  const mergeAnalysisResults = (results: any[]) => {
+    if (!results || results.length === 0) {
+      return {
+        missingCount: 0,
+        errorCount: 0,
+        formatCount: 0,
+        imageCount: 0,
+        missingFields: [],
+        textErrors: [],
+        formatIssues: [],
+        missingImages: [],
+        summary: '未获取到分析结果',
+        score: 0,
+      }
+    }
+
+    // 如果只有一个文件，直接处理其结果
+    if (results.length === 1) {
+      return processWorkflowOutput(results[0].result)
+    }
+
+    // 合并多个文件的结果
+    const merged = {
+      missingCount: 0,
+      errorCount: 0,
+      formatCount: 0,
+      imageCount: 0,
+      missingFields: [] as any[],
+      textErrors: [] as any[],
+      formatIssues: [] as any[],
+      missingImages: [] as any[],
+      summary: '',
+      score: 0,
+    }
+
+    let totalScore = 0
+
+    results.forEach((fileResult, index) => {
+      const processed = processWorkflowOutput(fileResult.result)
+      
+      merged.missingCount += processed.missingCount
+      merged.errorCount += processed.errorCount
+      merged.formatCount += processed.formatCount
+      merged.imageCount += processed.imageCount
+
+      // 添加文件索引到每个问题项
+      merged.missingFields.push(...(processed.missingFields || []).map((item: any) => ({
+        ...item,
+        fileIndex: index + 1
+      })))
+      merged.textErrors.push(...(processed.textErrors || []).map((item: any) => ({
+        ...item,
+        fileIndex: index + 1
+      })))
+      merged.formatIssues.push(...(processed.formatIssues || []).map((item: any) => ({
+        ...item,
+        fileIndex: index + 1
+      })))
+      merged.missingImages.push(...(processed.missingImages || []).map((item: any) => ({
+        ...item,
+        fileIndex: index + 1
+      })))
+
+      totalScore += processed.score || 0
+    })
+
+    merged.score = Math.round(totalScore / results.length)
+    merged.summary = `已分析 ${results.length} 个文件，平均质量分数: ${merged.score}`
+
+    return merged
   }
 
   // 使用原有 API 分析（文本输入）
@@ -1252,6 +1434,9 @@
     textInput.value = ''
   }
 
+  // 保存当前拆分的文件ID（用于后续获取拆分文件URL）
+  const currentSplitFileId = ref<string | null>(null)
+
   // 文档拆分方法
   const splitDocument = async () => {
     if (!selectedFile.value || !isDocxFile.value) return
@@ -1259,6 +1444,7 @@
     // 重置进度状态
     isSplittingDocument.value = true
     splitResult.value = null
+    currentSplitFileId.value = null
     splitProgress.value = { total: 0, completed: 0, percentage: 0 }
     currentFileProgress.value = { fileIndex: 0, step: '', percentage: 0 }
     progressLogs.value = []
@@ -1274,6 +1460,7 @@
       })
 
       const fileId = (uploadResponse as any).id
+      currentSplitFileId.value = fileId  // 保存文件ID
       progressLogs.value.push('文件上传完成，开始拆分...')
 
       // 2. 使用EventSource接收实时进度
@@ -1337,7 +1524,11 @@
       },
     })
 
-    splitResult.value = splitResponse
+    // 将文件ID添加到拆分结果中
+    splitResult.value = {
+      ...(splitResponse as any),
+      fileId: currentSplitFileId.value
+    }
     progressLogs.value.push('拆分完成！')
   }
 
@@ -1364,7 +1555,11 @@
         break
       case 'complete':
         eventSource.close()
-        splitResult.value = data.data
+        // 将文件ID添加到拆分结果中
+        splitResult.value = {
+          ...data.data,
+          fileId: currentSplitFileId.value
+        }
         progressLogs.value.push('拆分完成！')
         resolve()
         break

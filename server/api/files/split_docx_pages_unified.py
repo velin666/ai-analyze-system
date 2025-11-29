@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 跨平台 DOCX 拆分统一接口
 自动检测平台并选择合适的实现方式
@@ -5,6 +6,12 @@
 import os
 import sys
 import platform
+import io
+
+# 设置标准输出编码为 UTF-8，避免 Windows 下的编码问题
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 
 def get_platform_handler():
@@ -14,7 +21,7 @@ def get_platform_handler():
     if system == 'Windows':
         try:
             import win32com.client
-            print(f"✓ 检测到 Windows 平台，使用 win32com")
+            print(f"[OK] 检测到 Windows 平台，使用 win32com")
             from split_docx_pages import split_docx_by_pages
             return split_docx_by_pages, 'win32com'
         except ImportError:
@@ -23,7 +30,7 @@ def get_platform_handler():
     # Linux 或 macOS，或 Windows 但没有 win32com
     try:
         import uno
-        print(f"✓ 检测到 {system} 平台，使用 LibreOffice (兼容版本)")
+        print(f"[OK] 检测到 {system} 平台，使用 LibreOffice (兼容版本)")
         # 优先使用兼容性更好的 v2 版本
         try:
             from split_docx_pages_libreoffice_v2 import split_docx_by_pages_simple
@@ -74,9 +81,9 @@ def main():
     # 执行拆分
     try:
         handler(input_path, output_dir, pages_per_file)
-        print("\n✓ 拆分成功!")
+        print("\n[OK] 拆分成功!")
     except Exception as e:
-        print(f"\n✗ 拆分失败: {e}")
+        print(f"\n[ERROR] 拆分失败: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

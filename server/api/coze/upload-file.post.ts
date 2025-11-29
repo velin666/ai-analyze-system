@@ -5,8 +5,7 @@ export default defineEventHandler(async event => {
   try {
     // 获取 Nuxt 配置
     const config = useRuntimeConfig()
-    const cozePatToken = config.cozePatToken || process.env.COZE_PAT_TOKEN
-
+    const cozePatToken = config.cozePatToken || process.env.COZE_PAT_TOKEN || 'sat_RvP0bMuYu6OtKgsa4lWZLKdPccNrbIq8BJr2JcIKgdgIJ9pZrPItNscerHQMln57'
     if (!cozePatToken) {
       throw createError({
         statusCode: 500,
@@ -41,6 +40,7 @@ export default defineEventHandler(async event => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${cozePatToken}`,
+        "Content-Type": "multipart/form-data",
         ...cozeFormData.getHeaders(),
       },
       body: cozeFormData,
