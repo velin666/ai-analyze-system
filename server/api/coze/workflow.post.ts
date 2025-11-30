@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
         body: {
           workflow_id: '7573337879529062440',
           parameters: {
-            "bit1": 1,
+            "bit1": 0,
             "docx": fileUrl,
             "table_summary": tableSummary || `文件${i + 1}`
           },
