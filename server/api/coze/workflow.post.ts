@@ -7,22 +7,22 @@ function parseStreamResponse(streamData: string): any {
     let currentEvent = ''
     let messageData: any = null
     let allMessages: any[] = []
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
-      
+
       // 解析 event 行
       if (line.startsWith('event:')) {
         currentEvent = line.substring(6).trim()
       }
-      
+
       // 解析 data 行
       if (line.startsWith('data:')) {
         const jsonStr = line.substring(5).trim()
         if (jsonStr && jsonStr !== '[DONE]') {
           try {
             const data = JSON.parse(jsonStr)
-            
+
             // 只处理 Message 事件
             if (currentEvent === 'Message') {
               messageData = data
@@ -34,7 +34,7 @@ function parseStreamResponse(streamData: string): any {
         }
       }
     }
-    
+
     // 返回最后一个Message事件的数据，优先返回content
     if (messageData) {
       return {
@@ -44,31 +44,32 @@ function parseStreamResponse(streamData: string): any {
         node_type: messageData.node_type,
         usage: messageData.usage,
         raw: messageData,
-        allMessages
+        allMessages,
       }
     }
-    
-    return { 
-      success: false, 
-      content: '', 
+
+    return {
+      success: false,
+      content: '',
       raw: streamData,
-      message: '未找到Message事件'
+      message: '未找到Message事件',
     }
   } catch (error) {
     console.error('解析流式响应失败:', error)
-    return { 
-      success: false, 
-      content: '', 
-      raw: streamData, 
-      error: String(error) 
+    return {
+      success: false,
+      content: '',
+      raw: streamData,
+      error: String(error),
     }
   }
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
     // Coze API配置
-    const cozeApiToken = 'pat_xWDrCp0SDw4cpegl3e9Af3ZO2ss8gi5SwNCd0P6NHoxYd5f8c00UrLMZ7uGuO8gu'
+    const cozeApiToken =
+      'pat_xWDrCp0SDw4cpegl3e9Af3ZO2ss8gi5SwNCd0P6NHoxYd5f8c00UrLMZ7uGuO8gu'
     const cozeApiUrl = 'https://api.coze.cn/v1/workflow/stream_run'
 
     // 接收文件URL数组（支持拆分文档）
@@ -93,25 +94,25 @@ export default defineEventHandler(async (event) => {
       const response = await $fetch<ReadableStream>(cozeApiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${cozeApiToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${cozeApiToken}`,
+          'Content-Type': 'application/json',
         },
         body: {
           workflow_id: '7573337879529062440',
           parameters: {
-            "bit1": 0,
-            "docx": fileUrl,
-            "table_summary": tableSummary || `文件${i + 1}`
+            bit1: 0,
+            docx: fileUrl,
+            table_summary: tableSummary || `文件${i + 1}`,
           },
-        }
+        },
       })
 
       console.log(`第 ${i + 1} 个文件的 Coze Workflow API响应开始...`)
-      
+
       // 处理流式数据
       const reader = response.pipeThrough(new TextDecoderStream()).getReader()
       let fullResponse = ''
-      
+
       while (true) {
         const { value, done } = await reader.read()
 
@@ -123,11 +124,11 @@ export default defineEventHandler(async (event) => {
 
       // 解析流式响应中的JSON数据
       const parsedResult = parseStreamResponse(fullResponse)
-      
+
       results.push({
         fileIndex: i + 1,
         fileUrl,
-        result: parsedResult
+        result: parsedResult,
       })
 
       console.log(`第 ${i + 1} 个文件处理完成`)
@@ -137,16 +138,15 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       totalFiles: fileUrls.length,
-      results
+      results,
     }
-
   } catch (error: any) {
     console.error('Coze Workflow API调用失败:', error)
 
     // 返回详细错误信息
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.message || error.statusMessage || 'Workflow调用失败'
+      statusMessage: error.message || error.statusMessage || 'Workflow调用失败',
     })
   }
 })

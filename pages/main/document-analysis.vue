@@ -645,7 +645,7 @@
             </h2>
 
             <!-- 问题统计 -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <!-- <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
               <div class="text-center p-4 bg-red-50 rounded-lg">
                 <div class="text-2xl font-bold text-red-600">
                   {{ analysisResult.missingCount || 0 }}
@@ -670,12 +670,12 @@
                 </div>
                 <div class="text-sm text-purple-700">缺失图片</div>
               </div>
-            </div>
+            </div> -->
 
             <!-- 详细问题列表 -->
-            <div class="space-y-4">
-              <!-- 漏填项 -->
-              <div
+            <!-- <div class="space-y-4"> -->
+            <!-- 漏填项 -->
+            <!-- <div
                 v-if="analysisResult.missingFields?.length"
                 class="border border-red-200 rounded-lg p-4"
               >
@@ -715,10 +715,10 @@
                     >
                   </div>
                 </div>
-              </div>
+              </div> -->
 
-              <!-- 文字错误 -->
-              <div
+            <!-- 文字错误 -->
+            <!-- <div
                 v-if="analysisResult.textErrors?.length"
                 class="border border-orange-200 rounded-lg p-4"
               >
@@ -766,10 +766,10 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
-              <!-- 格式问题 -->
-              <div
+            <!-- 格式问题 -->
+            <!-- <div
                 v-if="analysisResult.formatIssues?.length"
                 class="border border-yellow-200 rounded-lg p-4"
               >
@@ -817,10 +817,10 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
-              <!-- 缺失图片 -->
-              <div
+            <!-- 缺失图片 -->
+            <!-- <div
                 v-if="analysisResult.missingImages?.length"
                 class="border border-purple-200 rounded-lg p-4"
               >
@@ -859,7 +859,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
 
             <!-- 操作按钮 -->
             <div
@@ -914,7 +914,7 @@
 </template>
 
 <script setup lang="ts">
-import { CozeAPI } from '@coze/api';
+  import { CozeAPI } from '@coze/api'
 
   // 页面标题
   definePageMeta({
@@ -1029,7 +1029,7 @@ import { CozeAPI } from '@coze/api';
       console.error('分析失败:', error)
       alert(error.message || '分析失败，请重试')
       // 显示模拟结果用于演示
-      showMockResult()
+      // showMockResult()
     } finally {
       isAnalyzing.value = false
     }
@@ -1043,7 +1043,11 @@ import { CozeAPI } from '@coze/api';
       let fileUrls: string[] = []
 
       // 检查是否有拆分文档
-      if (splitResult.value && splitResult.value.files && splitResult.value.files.length > 0) {
+      if (
+        splitResult.value &&
+        splitResult.value.files &&
+        splitResult.value.files.length > 0
+      ) {
         // 有拆分文档，获取拆分文件的URL列表
         currentStep.value = `正在获取 ${splitResult.value.files.length} 个拆分文件的URL...`
         progress.value = 10
@@ -1057,12 +1061,19 @@ import { CozeAPI } from '@coze/api';
             throw new Error('拆分结果中缺少文件ID，请重新拆分文档')
           }
 
-          const urlResponse = await $fetch<any>('/api/files/split-and-get-urls', {
-            method: 'POST',
-            body: { fileId: originalFileId },
-          })
+          const urlResponse = await $fetch<any>(
+            '/api/files/split-and-get-urls',
+            {
+              method: 'POST',
+              body: { fileId: originalFileId },
+            }
+          )
 
-          if (!urlResponse || !urlResponse.fileUrls || urlResponse.fileUrls.length === 0) {
+          if (
+            !urlResponse ||
+            !urlResponse.fileUrls ||
+            urlResponse.fileUrls.length === 0
+          ) {
             throw new Error('获取拆分文件URL失败')
           }
 
@@ -1102,20 +1113,21 @@ import { CozeAPI } from '@coze/api';
         method: 'POST',
         body: {
           fileUrls,
-          tableSummary: selectedFile.value.name
+          tableSummary: selectedFile.value.name,
         },
       })
-
+      progress.value = 60
       console.log('工作流分析响应:', workflowResponse)
 
       // 处理分析结果
       if (workflowResponse.success && workflowResponse.results) {
         currentStep.value = '分析完成，正在生成报告...'
-        progress.value = 90
+        progress.value = 80
 
         // 合并所有文件的分析结果
         analysisResult.value = mergeAnalysisResults(workflowResponse.results)
-        
+        console.log(`output->`, analysisResult.value)
+
         progress.value = 100
         currentStep.value = '分析完成'
       } else {
@@ -1179,11 +1191,11 @@ import { CozeAPI } from '@coze/api';
     // 根据实际的工作流输出格式进行解析
     try {
       const result = typeof output === 'string' ? JSON.parse(output) : output
-      
+
       // 如果后端已经解析好返回了content字段
       if (result.success && result.content !== undefined) {
         const content = result.content
-        
+
         // 尝试解析content为JSON（如果content是JSON字符串）
         let parsedContent = content
         if (typeof content === 'string') {
@@ -1206,13 +1218,17 @@ import { CozeAPI } from '@coze/api';
             textErrors: parsedContent.text_errors || [],
             formatIssues: parsedContent.format_issues || [],
             missingImages: parsedContent.missing_images || [],
-            summary: parsedContent.summary || parsedContent.rawContent || content || '文档分析完成',
+            summary:
+              parsedContent.summary ||
+              parsedContent.rawContent ||
+              content ||
+              '文档分析完成',
             score: parsedContent.quality_score || 85,
-            usage: result.usage,  // 保留使用量信息
-            rawContent: content,  // 保留原始content
+            usage: result.usage, // 保留使用量信息
+            rawContent: content, // 保留原始content
           }
         }
-        
+
         // 如果content是纯文本，作为summary展示
         return {
           missingCount: 0,
@@ -1255,7 +1271,10 @@ import { CozeAPI } from '@coze/api';
         textErrors: [],
         formatIssues: [],
         missingImages: [],
-        summary: typeof output === 'string' ? output : JSON.stringify(output) || '文档分析完成',
+        summary:
+          typeof output === 'string'
+            ? output
+            : JSON.stringify(output) || '文档分析完成',
         score: 85,
       }
     }
@@ -1301,29 +1320,37 @@ import { CozeAPI } from '@coze/api';
 
     results.forEach((fileResult, index) => {
       const processed = processWorkflowOutput(fileResult.result)
-      
+
       merged.missingCount += processed.missingCount
       merged.errorCount += processed.errorCount
       merged.formatCount += processed.formatCount
       merged.imageCount += processed.imageCount
 
       // 添加文件索引到每个问题项
-      merged.missingFields.push(...(processed.missingFields || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1
-      })))
-      merged.textErrors.push(...(processed.textErrors || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1
-      })))
-      merged.formatIssues.push(...(processed.formatIssues || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1
-      })))
-      merged.missingImages.push(...(processed.missingImages || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1
-      })))
+      merged.missingFields.push(
+        ...(processed.missingFields || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.textErrors.push(
+        ...(processed.textErrors || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.formatIssues.push(
+        ...(processed.formatIssues || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.missingImages.push(
+        ...(processed.missingImages || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
 
       totalScore += processed.score || 0
     })
@@ -1460,7 +1487,7 @@ import { CozeAPI } from '@coze/api';
       })
 
       const fileId = (uploadResponse as any).id
-      currentSplitFileId.value = fileId  // 保存文件ID
+      currentSplitFileId.value = fileId // 保存文件ID
       progressLogs.value.push('文件上传完成，开始拆分...')
 
       // 2. 使用EventSource接收实时进度
@@ -1527,7 +1554,7 @@ import { CozeAPI } from '@coze/api';
     // 将文件ID添加到拆分结果中
     splitResult.value = {
       ...(splitResponse as any),
-      fileId: currentSplitFileId.value
+      fileId: currentSplitFileId.value,
     }
     progressLogs.value.push('拆分完成！')
   }
@@ -1558,7 +1585,7 @@ import { CozeAPI } from '@coze/api';
         // 将文件ID添加到拆分结果中
         splitResult.value = {
           ...data.data,
-          fileId: currentSplitFileId.value
+          fileId: currentSplitFileId.value,
         }
         progressLogs.value.push('拆分完成！')
         resolve()
