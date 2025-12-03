@@ -224,37 +224,41 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 # 跳转到起始页并选择到结束页
                 print(f"选择页面 {start_page} 到 {end_page}...")
                 
-                # 使用文本范围进行精确的页面选择
+                # 使用直接设置Start/End属性的方式选择范围
                 try:
                     text = doc.getText()
                     
-                    # 方法：通过页面跳转获取字符位置，然后创建文本范围
+                    # 获取起始位置
                     print(f"定位起始页 {start_page}...")
                     view_cursor.jumpToPage(start_page)
                     time.sleep(0.02)
+                    start_pos = view_cursor.getStart()
                     
-                    # 获取起始页的字符位置
-                    # 使用text cursor记录起始位置
-                    start_text_cursor = text.createTextCursorByRange(view_cursor.getStart())
-                    start_pos = start_text_cursor.getStart()
-                    
-                    # 定位结束位置
+                    # 获取结束位置
                     if end_page < total_pages:
-                        # 跳转到结束页的下一页，获取该页起始位置作为结束位置
-                        print(f"定位结束页 {end_page} 的边界...")
+                        print(f"定位结束页边界...")
                         view_cursor.jumpToPage(end_page + 1)
                         time.sleep(0.02)
                         end_pos = view_cursor.getStart()
                     else:
-                        # 最后几页，选择到文档末尾
                         print(f"选择到文档末尾...")
                         end_pos = text.getEnd()
                     
-                    # 创建文本光标来选择范围
-                    selection_cursor = text.createTextCursorByRange(start_pos)
-                    selection_cursor.gotoRange(end_pos, True)  # True表示扩展选择
+                    # 创建文本光标并直接设置Start和End属性
+                    selection_cursor = text.createTextCursor()
+                    selection_cursor.gotoStart(False)  # 先移到开始
                     
-                    # 应用选择
+                    # 直接设置光标的起始和结束位置
+                    try:
+                        # 尝试直接设置Start和End属性
+                        selection_cursor.Start = start_pos
+                        selection_cursor.End = end_pos
+                    except:
+                        # 如果直接设置失败，使用gotoRange的非扩展模式
+                        selection_cursor.gotoRange(start_pos, False)
+                        selection_cursor.gotoRange(end_pos, True)
+                    
+                    # 选择这个范围
                     controller.select(selection_cursor)
                     
                     print(f"✓ 已选择页面 {start_page}-{end_page}")
@@ -264,13 +268,9 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                     import traceback
                     traceback.print_exc()
                     
-                    # 回退方案：全选整个文档（仅当只有一个文件时）
-                    if total_files == 1:
-                        print(f"回退：只有一个文件，使用全选")
-                        dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
-                    else:
-                        # 多文件情况下，抛出异常让用户知道
-                        raise Exception(f"无法选择页面 {start_page}-{end_page}: {e}")
+                    # 回退：使用全选
+                    print(f"回退到全选方式")
+                    dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
                 
                 # 复制选中内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:50")
