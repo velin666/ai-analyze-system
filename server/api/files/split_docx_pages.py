@@ -98,6 +98,17 @@ def split_docx_by_page(input_path: str, output_dir: str) -> None:
     """按单页拆分DOCX文档（每页一个文件）"""
     input_path = str(Path(input_path).resolve())
     output_dir = str(Path(output_dir).resolve())
+    
+    # 清理旧的输出目录（如果存在）
+    import shutil
+    if os.path.exists(output_dir):
+        try:
+            shutil.rmtree(output_dir)
+            print(f"已清理旧的输出目录: {output_dir}")
+        except Exception as e:
+            print(f"清理目录时出错: {e}")
+    
+    # 创建全新的输出目录
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     word = gencache.EnsureDispatch("Word.Application")
     word.Visible = False
@@ -197,6 +208,17 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
     
     input_path = str(Path(input_path).resolve())
     output_dir = str(Path(output_dir).resolve())
+    
+    # 清理旧的输出目录（如果存在）
+    import shutil
+    if os.path.exists(output_dir):
+        try:
+            shutil.rmtree(output_dir)
+            print(f"已清理旧的输出目录: {output_dir}")
+        except Exception as e:
+            print(f"清理目录时出错: {e}")
+    
+    # 创建全新的输出目录
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     print(f"开始拆分文档: {input_path}")

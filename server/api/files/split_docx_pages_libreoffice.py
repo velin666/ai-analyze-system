@@ -104,7 +104,16 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
     print(f"输出目录: {output_dir}")
     print(f"每个文件页数: {pages_per_file}")
     
-    # 确保输出目录存在
+    # 清理旧的输出目录（如果存在）
+    import shutil
+    if os.path.exists(output_dir):
+        try:
+            shutil.rmtree(output_dir)
+            print(f"已清理旧的输出目录: {output_dir}")
+        except Exception as e:
+            print(f"清理目录时出错: {e}")
+    
+    # 创建全新的输出目录
     os.makedirs(output_dir, exist_ok=True)
     
     # 连接到 LibreOffice
