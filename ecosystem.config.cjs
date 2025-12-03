@@ -32,6 +32,7 @@ const apps = [
     exec_mode: 'cluster',
     env: {
       NODE_ENV: 'production',
+      NODE_OPTIONS: '--max-old-space-size=2048',
       PORT: 5500,
       DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
       LIBREOFFICE_HOST: '127.0.0.1',
@@ -45,7 +46,7 @@ const apps = [
     out_file: './logs/out.log',
     log_file: './logs/combined.log',
     time: true,
-    max_memory_restart: '1G',
+    max_memory_restart: '2G',
     watch: false,
     ignore_watch: ['node_modules', 'logs'],
   },
