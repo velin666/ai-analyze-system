@@ -22,10 +22,10 @@ def get_platform_handler():
         try:
             import win32com.client
             print(f"[OK] 检测到 Windows 平台，使用 win32com")
-            from split_docx_pages import split_docx_by_pages
-            return split_docx_by_pages, 'win32com'
-        except ImportError:
-            print("警告: win32com 未安装，尝试使用 LibreOffice...")
+            from split_docx_pages import split_docx_by_page_range
+            return split_docx_by_page_range, 'win32com'
+        except ImportError as e:
+            print(f"警告: win32com 导入失败 ({e})，尝试使用 LibreOffice...")
             
     # Linux 或 macOS，或 Windows 但没有 win32com
     try:
