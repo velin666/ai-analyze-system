@@ -35,6 +35,7 @@
 - Node.js 18+
 - pnpm
 - DeepSeek API Key
+- LibreOffice 24.2.7.2 420(Build:2) （Linux/macOS平台拆分DOCX文档所需）
 
 ### 安装步骤
 

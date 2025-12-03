@@ -201,7 +201,7 @@ def split_docx_by_page(input_path: str, output_dir: str) -> None:
         word.Quit()
 
 
-def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: int = 30) -> None:
+def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: int = 30, original_filename: str = None) -> None:
     """按指定页数范围拆分DOCX文档"""
     import time
     import subprocess
@@ -210,7 +210,8 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
     output_dir = str(Path(output_dir).resolve())
     
     # 获取原文件名（不含扩展名）
-    original_filename = Path(input_path).stem
+    if original_filename is None:
+        original_filename = Path(input_path).stem
     
     # 清理旧的输出目录（如果存在）
     import shutil
@@ -481,26 +482,23 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
 def main() -> None:
     if len(sys.argv) < 2:
         print("用法: python split_docx_pages.py <输入docx路径> [输出目录] [每个文件页数]")
-        print("示例: python split_docx_pages.py document.docx output_dir 30")
         sys.exit(1)
     
     input_path = sys.argv[1]
-    base = Path(input_path).with_suffix("")
-    output_dir = (
-        sys.argv[2]
-        if len(sys.argv) >= 3
-        else str(base.parent / f"{base.name}_split")
-    )
+    output_dir = sys.argv[2]
+    pages_per_file = 30
+    original_filename = None
     
-    # 如果提供了第三个参数，使用按页数范围拆分
+    # 如果提供了第三个参数，作为每个文件页数
     if len(sys.argv) >= 4:
         pages_per_file = int(sys.argv[3])
-        split_docx_by_page_range(input_path, output_dir, pages_per_file)
-    else:
-        # 默认使用30页一个文件
-        split_docx_by_page_range(input_path, output_dir, 30)
+    
+    # 如果提供了第四个参数，作为原始文件名
+    if len(sys.argv) >= 5:
+        original_filename = sys.argv[4]
+    
+    split_docx_by_page_range(input_path, output_dir, pages_per_file, original_filename)
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,5 +1,6 @@
 """
 使用 LibreOffice 拆分 DOCX 文档（跨平台方案）
+版本 LibreOffice 24.2.7.2 420(Build:2)
 支持 Linux/macOS/Windows
 修复 Linux 平台拆分问题 - 确保资源正确清理
 整合超时处理机制
@@ -132,14 +133,15 @@ def make_property_value(name, value):
     return prop
 
 
-def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_file: int):
+def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_file: int, original_filename: str = None):
     """使用 LibreOffice 按页数拆分 DOCX"""
     
     if not LIBREOFFICE_AVAILABLE:
         raise ImportError("LibreOffice UNO 未安装。请运行: pip install pyuno")
     
     # 获取原文件名（不含扩展名）
-    original_filename = Path(input_path).stem
+    if original_filename is None:
+        original_filename = Path(input_path).stem
     
     print(f"开始拆分文档: {input_path}")
     print(f"输出目录: {output_dir}")
@@ -222,48 +224,53 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 # 跳转到起始页并选择到结束页
                 print(f"选择页面 {start_page} 到 {end_page}...")
                 
-                # 使用更可靠的页面范围选择方法
+                # 使用文本范围进行精确的页面选择
                 try:
-                    # 1. 跳转到起始页并获取起始位置
-                    view_cursor.jumpToPage(start_page)
-                    # 获取文本和创建范围
                     text = doc.getText()
                     
-                    # 2. 获取起始页的TextRange
-                    start_range = view_cursor.getStart()
+                    # 方法：通过页面跳转获取字符位置，然后创建文本范围
+                    print(f"定位起始页 {start_page}...")
+                    view_cursor.jumpToPage(start_page)
+                    time.sleep(0.02)
                     
-                    # 3. 如果结束页与起始页相同
-                    if start_page == end_page:
-                        # 跳到下一页获取边界
-                        if end_page < total_pages:
-                            view_cursor.jumpToPage(end_page + 1)
-                            end_range = view_cursor.getStart()
-                        else:
-                            # 最后一页，选择到文档末尾
-                            end_range = text.getEnd()
+                    # 获取起始页的字符位置
+                    # 使用text cursor记录起始位置
+                    start_text_cursor = text.createTextCursorByRange(view_cursor.getStart())
+                    start_pos = start_text_cursor.getStart()
+                    
+                    # 定位结束位置
+                    if end_page < total_pages:
+                        # 跳转到结束页的下一页，获取该页起始位置作为结束位置
+                        print(f"定位结束页 {end_page} 的边界...")
+                        view_cursor.jumpToPage(end_page + 1)
+                        time.sleep(0.02)
+                        end_pos = view_cursor.getStart()
                     else:
-                        # 跳转到结束页的下一页获取边界
-                        if end_page < total_pages:
-                            view_cursor.jumpToPage(end_page + 1)
-                            end_range = view_cursor.getStart()
-                        else:
-                            # 最后一页，选择到文档末尾
-                            end_range = text.getEnd()
+                        # 最后几页，选择到文档末尾
+                        print(f"选择到文档末尾...")
+                        end_pos = text.getEnd()
                     
-                    # 4. 创建文本光标并选择范围
-                    text_cursor = text.createTextCursorByRange(start_range)
-                    text_cursor.gotoRange(end_range, True)
+                    # 创建文本光标来选择范围
+                    selection_cursor = text.createTextCursorByRange(start_pos)
+                    selection_cursor.gotoRange(end_pos, True)  # True表示扩展选择
                     
-                    # 5. 选择该范围
-                    controller.select(text_cursor)
+                    # 应用选择
+                    controller.select(selection_cursor)
                     
-                    print(f"已选择页面范围 {start_page}-{end_page}")
+                    print(f"✓ 已选择页面 {start_page}-{end_page}")
                     
                 except Exception as e:
-                    print(f"页面选择出错: {e}")
-                    print(f"尝试使用全选...")
-                    # 回退：全选整个文档
-                    dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
+                    print(f"❌ 页面选择失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    
+                    # 回退方案：全选整个文档（仅当只有一个文件时）
+                    if total_files == 1:
+                        print(f"回退：只有一个文件，使用全选")
+                        dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
+                    else:
+                        # 多文件情况下，抛出异常让用户知道
+                        raise Exception(f"无法选择页面 {start_page}-{end_page}: {e}")
                 
                 # 复制选中内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:50")
@@ -351,13 +358,15 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
 
 def main():
     """主函数"""
-    if len(sys.argv) != 4:
-        print("用法: python split_docx_pages_libreoffice.py <输入文件> <输出目录> <每文件页数>")
+    if len(sys.argv) not in [4, 5]:
+        print("用法: python split_docx_pages_libreoffice.py <输入文件> <输出目录> <每文件页数> [原始文件名]")
         sys.exit(1)
     
     input_path = sys.argv[1]
     output_dir = sys.argv[2]
     pages_per_file = int(sys.argv[3])
+    # 如果提供了原始文件名参数，使用它；否则从input_path提取
+    original_filename = sys.argv[4] if len(sys.argv) == 5 else Path(input_path).stem
     
     if not os.path.exists(input_path):
         print(f"错误: 输入文件不存在: {input_path}")
@@ -368,7 +377,7 @@ def main():
         sys.exit(1)
     
     try:
-        split_docx_by_pages_libreoffice(input_path, output_dir, pages_per_file)
+        split_docx_by_pages_libreoffice(input_path, output_dir, pages_per_file, original_filename)
         print("拆分成功!")
     except Exception as e:
         print(f"拆分失败: {e}")

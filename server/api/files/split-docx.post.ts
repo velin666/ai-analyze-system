@@ -10,7 +10,12 @@ const UPLOAD_DIR = join(process.cwd(), 'uploads')
 export default defineEventHandler(async event => {
   try {
     const body = await readBody(event)
-    const { fileId, pagesPerFile = 30 } = body
+    const { fileId, pagesPerFile = 30, originalName } = body
+
+    // 获取原文件名（不含扩展名）
+    const baseFileName = originalName 
+      ? originalName.replace(/\.docx$/i, '') 
+      : fileId
 
     if (!fileId) {
       throw createError({
@@ -38,7 +43,7 @@ export default defineEventHandler(async event => {
       'files',
       'split_docx_pages_unified.py'
     )
-    const command = `python "${scriptPath}" "${inputPath}" "${outputDir}" ${pagesPerFile}`
+    const command = `python "${scriptPath}" "${inputPath}" "${outputDir}" ${pagesPerFile} "${baseFileName}"`
 
     console.log(`执行命令: ${command}`)
 

@@ -1791,6 +1791,7 @@
       })
 
       const fileId = (uploadResponse as any).id
+      const originalName = (uploadResponse as any).originalName
       currentSplitFileId.value = fileId // 保存文件ID
       progressLogs.value.push('文件上传完成，开始拆分...')
 
@@ -1801,9 +1802,9 @@
       const useRealTimeProgress = true // 可以设置为false使用简单版本
 
       if (useRealTimeProgress) {
-        await handleRealTimeProgress(fileId)
+        await handleRealTimeProgress(fileId, originalName)
       } else {
-        await handleSimpleProgress(fileId)
+        await handleSimpleProgress(fileId, originalName)
       }
     } catch (error: any) {
       console.error('拆分失败:', error)
@@ -1814,10 +1815,10 @@
   }
 
   // 实时进度处理方法
-  const handleRealTimeProgress = (fileId: string) => {
+  const handleRealTimeProgress = (fileId: string, originalName: string) => {
     return new Promise<void>((resolve, reject) => {
       const eventSource = new EventSource(
-        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${pagesPerFile.value}`
+        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${pagesPerFile.value}&originalName=${encodeURIComponent(originalName)}`
       )
 
       eventSource.onmessage = event => {
@@ -1846,12 +1847,14 @@
   }
 
   // 简单进度处理方法（备用）
-  const handleSimpleProgress = async (fileId: string) => {
+  const handleSimpleProgress = async (fileId: string, originalName: string) => {
+    // 调用简单版本的拆分API
     const splitResponse = await $fetch('/api/files/split-docx', {
       method: 'POST',
       body: {
         fileId: fileId,
         pagesPerFile: pagesPerFile.value,
+        originalName: originalName,
       },
     })
 

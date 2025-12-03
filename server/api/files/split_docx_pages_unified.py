@@ -45,13 +45,14 @@ def get_platform_handler():
 
 def main():
     """主函数"""
-    if len(sys.argv) != 4:
-        print("用法: python split_docx_pages_unified.py <输入文件> <输出目录> <每文件页数>")
+    if len(sys.argv) not in [4, 5]:
+        print("用法: python split_docx_pages_unified.py <输入文件> <输出目录> <每文件页数> [原始文件名]")
         sys.exit(1)
     
     input_path = sys.argv[1]
     output_dir = sys.argv[2]
     pages_per_file = int(sys.argv[3])
+    original_filename = sys.argv[4] if len(sys.argv) == 5 else None
     
     # 验证参数
     if not os.path.exists(input_path):
@@ -75,7 +76,11 @@ def main():
     
     # 执行拆分
     try:
-        handler(input_path, output_dir, pages_per_file)
+        # 传递原始文件名参数（如果有的话）
+        if original_filename:
+            handler(input_path, output_dir, pages_per_file, original_filename)
+        else:
+            handler(input_path, output_dir, pages_per_file)
         print("\n[OK] 拆分成功!")
     except Exception as e:
         print(f"\n[ERROR] 拆分失败: {e}")

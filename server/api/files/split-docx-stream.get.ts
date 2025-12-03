@@ -5,7 +5,7 @@ import AdmZip from 'adm-zip'
 
 export default defineEventHandler(async event => {
   const query = getQuery(event)
-  const { fileId, pagesPerFile = 30 } = query
+  const { fileId, pagesPerFile = 30, originalName } = query
   const pages = parseInt(pagesPerFile as string) || 30
 
   if (!fileId) {
@@ -14,6 +14,11 @@ export default defineEventHandler(async event => {
       statusMessage: '缺少文件ID',
     })
   }
+
+  // 获取原文件名（不含扩展名）
+  const baseFileName = originalName 
+    ? (originalName as string).replace(/\.docx$/i, '') 
+    : fileId as string
 
   // 设置Server-Sent Events响应头
   setHeader(event, 'Content-Type', 'text/event-stream')
@@ -55,10 +60,10 @@ export default defineEventHandler(async event => {
 
     sendMessage('info', { message: '检测平台并初始化处理器...' })
 
-    // 启动Python进程
+    // 启动Python进程，传递原始文件名
     const pythonProcess = spawn(
       'python',
-      [scriptPath, inputPath, outputDir, pages.toString()],
+      [scriptPath, inputPath, outputDir, pages.toString(), baseFileName],
       {
         stdio: ['pipe', 'pipe', 'pipe'],
       }
