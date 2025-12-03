@@ -138,6 +138,9 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
     if not LIBREOFFICE_AVAILABLE:
         raise ImportError("LibreOffice UNO 未安装。请运行: pip install pyuno")
     
+    # 获取原文件名（不含扩展名）
+    original_filename = Path(input_path).stem
+    
     print(f"开始拆分文档: {input_path}")
     print(f"输出目录: {output_dir}")
     print(f"每个文件页数: {pages_per_file}")
@@ -213,41 +216,33 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 # 复制指定页面范围的内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:选择页面范围:30")
                 
-                # 重置原文档的光标位置到起始页（重要：Linux平台需要）
-                try:
-                    view_cursor.jumpToPage(start_page)
-                except Exception as e:
-                    print(f"警告: jumpToPage 失败: {e}")
-                    # 回退到文档开始
-                    view_cursor.gotoStart(False)
+                # 使用文本光标进行精确的页面范围选择
+                text = doc.getText()
+                text_cursor = text.createTextCursor()
                 
-                # 使用 Dispatcher 执行选择和复制操作
+                # 跳转到起始页
+                print(f"跳转到第 {start_page} 页...")
+                view_cursor.jumpToPage(start_page)
+                
+                # 获取起始页的光标位置
+                view_cursor.gotoStartOfPage(False)
+                text_cursor.gotoRange(view_cursor.getStart(), False)
+                
+                # 跳转到结束页
+                print(f"选择到第 {end_page} 页...")
+                view_cursor.jumpToPage(end_page)
+                view_cursor.gotoEndOfPage(False)
+                
+                # 扩展选择到结束位置
+                text_cursor.gotoRange(view_cursor.getEnd(), True)
+                
+                # 选择该范围
+                controller.select(text_cursor)
+                
+                print(f"已选择页面 {start_page}-{end_page}")
+                
+                # 使用 Dispatcher 执行复制操作
                 dispatcher = ctx.ServiceManager.createInstance("com.sun.star.frame.DispatchHelper")
-                
-                # 如果是拆分单页或少数页，使用简化的全选方式
-                if pages_per_file <= 5 or start_page == 1:
-                    # 全选文档内容
-                    dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
-                else:
-                    # 对于多页文档，尝试更精确的选择
-                    try:
-                        # 移动到文档开始
-                        dispatcher.executeDispatch(controller.Frame, ".uno:GoToStartOfDoc", "", 0, ())
-                        
-                        # 如果不是从第一页开始，跳转到指定页
-                        if start_page > 1:
-                            # 使用页面跳转
-                            page_props = (
-                                make_property_value("Page", start_page),
-                            )
-                            dispatcher.executeDispatch(controller.Frame, ".uno:GoToPage", "", 0, page_props)
-                        
-                        # 选择到文档末尾
-                        dispatcher.executeDispatch(controller.Frame, ".uno:GoToEndOfDoc", "", 0, ())
-                        
-                    except Exception as e:
-                        print(f"精确选择失败，使用全选: {e}")
-                        dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
                 
                 # 复制选中内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:50")
@@ -266,10 +261,13 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 
                 # 保存新文档
                 print(f"PROGRESS:FILE_STEP:{file_index}:保存文档:90")
-                if total_files == 1:
-                    output_filename = f"split_complete.docx"
+                # 生成文件名：原文件名 (第X页) 或 原文件名 (第X-Y页)
+                if start_page == end_page:
+                    # 单页
+                    output_filename = f"{original_filename} (第{start_page}页).docx"
                 else:
-                    output_filename = f"split_part_{file_index}_pages_{start_page}-{end_page}.docx"
+                    # 多页
+                    output_filename = f"{original_filename} (第{start_page}-{end_page}页).docx"
                     
                 output_path = os.path.join(output_dir, output_filename)
                 output_url = uno.systemPathToFileUrl(os.path.abspath(output_path))

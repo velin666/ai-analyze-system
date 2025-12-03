@@ -209,6 +209,9 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
     input_path = str(Path(input_path).resolve())
     output_dir = str(Path(output_dir).resolve())
     
+    # 获取原文件名（不含扩展名）
+    original_filename = Path(input_path).stem
+    
     # 清理旧的输出目录（如果存在）
     import shutil
     if os.path.exists(output_dir):
@@ -420,7 +423,13 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                     pass
                 
                 # 保存文件
-                out_filename = f"第{start_page}-{end_page}页.docx" if pages_per_file != 1 else f"第{file_index}个文件.docx"
+                # 生成文件名：原文件名 (第X页) 或 原文件名 (第X-Y页)
+                if start_page == end_page:
+                    # 单页
+                    out_filename = f"{original_filename} (第{start_page}页).docx"
+                else:
+                    # 多页
+                    out_filename = f"{original_filename} (第{start_page}-{end_page}页).docx"
                 out_path = os.path.join(output_dir, out_filename)
                 print(f"  保存文件: {out_filename}")
                 print(f"PROGRESS:FILE_STEP:{file_index}:保存文件:90")
