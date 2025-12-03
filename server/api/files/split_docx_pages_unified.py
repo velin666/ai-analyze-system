@@ -15,29 +15,36 @@ if sys.platform == 'win32':
 
 
 def get_platform_handler():
-    """根据平台返回对应的处理模块"""
+    """根据平台获取对应的处理函数（按优先级）"""
     system = platform.system()
     
-    if system == 'Windows':
-        try:
-            import win32com.client
-            print(f"[OK] 检测到 Windows 平台，使用 win32com")
-            from split_docx_pages import split_docx_by_page_range
-            return split_docx_by_page_range, 'win32com'
-        except ImportError as e:
-            print(f"警告: win32com 导入失败 ({e})，尝试使用 LibreOffice...")
-            
-    # Linux 或 macOS，或 Windows 但没有 win32com
+    # 优先级1: 尝试使用 python-docx（跨平台，最可靠）
     try:
-        import uno
-        print(f"[OK] 检测到 {system} 平台，使用 LibreOffice (合并优化版本)")
-        # 使用合并和优化后的 LibreOffice 版本（包含超时处理和Linux修复）
+        from split_docx_pages_python_docx import split_docx_by_sections
+        return split_docx_by_sections, "python-docx (跨平台)"
+    except ImportError:
+        print("提示: python-docx 未安装，尝试其他方案...")
+        print("  建议安装: pip install python-docx")
+    
+    # 优先级2: Windows 平台使用 win32com
+    if system == "Windows":
+        try:
+            from split_docx_pages import split_docx_by_page_range
+            return split_docx_by_page_range, "Windows (win32com)"
+        except ImportError:
+            print("警告: pywin32 未安装，尝试使用 LibreOffice")
+    
+    # 优先级3: Linux/macOS 或 Windows 回退：使用 LibreOffice
+    try:
         from split_docx_pages_libreoffice import split_docx_by_pages_libreoffice
-        return split_docx_by_pages_libreoffice, 'libreoffice'
+        return split_docx_by_pages_libreoffice, "LibreOffice (UNO)"
     except ImportError:
         print(f"错误: 未找到可用的 DOCX 处理库")
-        print(f"  - Windows: 请安装 pywin32 (pip install pywin32)")
-        print(f"  - Linux/macOS: 请安装 LibreOffice 和 pyuno")
+        print(f"\n推荐方案:")
+        print(f"  pip install python-docx  # 跨平台，最推荐")
+        print(f"\n备选方案:")
+        print(f"  - Windows: pip install pywin32")
+        print(f"  - Linux/macOS: 安装 LibreOffice 和 pyuno")
         print(f"    Ubuntu/Debian: sudo apt-get install libreoffice python3-uno")
         print(f"    macOS: brew install libreoffice && pip install pyuno")
         sys.exit(1)
