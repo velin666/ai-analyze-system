@@ -216,33 +216,54 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 # 复制指定页面范围的内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:选择页面范围:30")
                 
-                # 使用文本光标进行精确的页面范围选择
-                text = doc.getText()
-                text_cursor = text.createTextCursor()
-                
-                # 跳转到起始页
-                print(f"跳转到第 {start_page} 页...")
-                view_cursor.jumpToPage(start_page)
-                
-                # 获取起始页的光标位置
-                view_cursor.gotoStartOfPage(False)
-                text_cursor.gotoRange(view_cursor.getStart(), False)
-                
-                # 跳转到结束页
-                print(f"选择到第 {end_page} 页...")
-                view_cursor.jumpToPage(end_page)
-                view_cursor.gotoEndOfPage(False)
-                
-                # 扩展选择到结束位置
-                text_cursor.gotoRange(view_cursor.getEnd(), True)
-                
-                # 选择该范围
-                controller.select(text_cursor)
-                
-                print(f"已选择页面 {start_page}-{end_page}")
-                
-                # 使用 Dispatcher 执行复制操作
+                # 使用 Dispatcher 进行页面选择
                 dispatcher = ctx.ServiceManager.createInstance("com.sun.star.frame.DispatchHelper")
+                
+                # 跳转到起始页并选择到结束页
+                print(f"选择页面 {start_page} 到 {end_page}...")
+                
+                # 使用更可靠的页面范围选择方法
+                try:
+                    # 1. 跳转到起始页并获取起始位置
+                    view_cursor.jumpToPage(start_page)
+                    # 获取文本和创建范围
+                    text = doc.getText()
+                    
+                    # 2. 获取起始页的TextRange
+                    start_range = view_cursor.getStart()
+                    
+                    # 3. 如果结束页与起始页相同
+                    if start_page == end_page:
+                        # 跳到下一页获取边界
+                        if end_page < total_pages:
+                            view_cursor.jumpToPage(end_page + 1)
+                            end_range = view_cursor.getStart()
+                        else:
+                            # 最后一页，选择到文档末尾
+                            end_range = text.getEnd()
+                    else:
+                        # 跳转到结束页的下一页获取边界
+                        if end_page < total_pages:
+                            view_cursor.jumpToPage(end_page + 1)
+                            end_range = view_cursor.getStart()
+                        else:
+                            # 最后一页，选择到文档末尾
+                            end_range = text.getEnd()
+                    
+                    # 4. 创建文本光标并选择范围
+                    text_cursor = text.createTextCursorByRange(start_range)
+                    text_cursor.gotoRange(end_range, True)
+                    
+                    # 5. 选择该范围
+                    controller.select(text_cursor)
+                    
+                    print(f"已选择页面范围 {start_page}-{end_page}")
+                    
+                except Exception as e:
+                    print(f"页面选择出错: {e}")
+                    print(f"尝试使用全选...")
+                    # 回退：全选整个文档
+                    dispatcher.executeDispatch(controller.Frame, ".uno:SelectAll", "", 0, ())
                 
                 # 复制选中内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:50")
