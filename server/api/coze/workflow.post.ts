@@ -72,73 +72,90 @@ export default defineEventHandler(async event => {
       'pat_xWDrCp0SDw4cpegl3e9Af3ZO2ss8gi5SwNCd0P6NHoxYd5f8c00UrLMZ7uGuO8gu'
     const cozeApiUrl = 'https://api.coze.cn/v1/workflow/stream_run'
 
-    // 接收文件URL数组（支持拆分文档）
+    // 接收单个文件URL
     const body = await readBody(event)
-    const { fileUrls, tableSummary } = body
+    const { fileUrl, tableSummary } = body
 
-    if (!fileUrls || !Array.isArray(fileUrls) || fileUrls.length === 0) {
+    if (!fileUrl || typeof fileUrl !== 'string') {
       throw createError({
         statusCode: 400,
         statusMessage: '文件URL参数缺失或格式错误',
       })
     }
 
-    const results: any[] = []
+    console.log(`处理文件: ${fileUrl}`)
 
-    // 按顺序处理每个文件
-    for (let i = 0; i < fileUrls.length; i++) {
-      const fileUrl = fileUrls[i]
-      console.log(`处理第 ${i + 1}/${fileUrls.length} 个文件: ${fileUrl}`)
-
-      // 调用Coze Workflow API
-      const response = await $fetch<ReadableStream>(cozeApiUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${cozeApiToken}`,
-          'Content-Type': 'application/json',
+    // 调用Coze Workflow API
+    const response = await $fetch<ReadableStream>(cozeApiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${cozeApiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: {
+        workflow_id: '7573337879529062440',
+        parameters: {
+          bit1: 0,
+          docx: fileUrl,
+          table_summary: tableSummary || '文档分析',
         },
-        body: {
-          workflow_id: '7573337879529062440',
-          parameters: {
-            bit1: 0,
-            docx: fileUrl,
-            table_summary: tableSummary || `文件${i + 1}`,
-          },
-        },
-      })
+      },
+    })
 
-      console.log(`第 ${i + 1} 个文件的 Coze Workflow API响应开始...`)
+    console.log('Coze Workflow API响应开始...')
 
-      // 处理流式数据
-      const reader = response.pipeThrough(new TextDecoderStream()).getReader()
-      let fullResponse = ''
+    // 处理流式数据
+    const reader = response.pipeThrough(new TextDecoderStream()).getReader()
+    let fullResponse = ''
+    let hasError = false
+    let errorInfo: any = null
 
-      while (true) {
-        const { value, done } = await reader.read()
+    while (true) {
+      const { value, done } = await reader.read()
 
-        if (done) break
+      if (done) break
 
-        fullResponse += value
-        console.log('收到流式数据块:', value)
+      fullResponse += value
+      console.log('收到流式数据块:', value)
+
+      // 检查是否有Error事件
+      if (value.includes('event: Error')) {
+        hasError = true
+        // 提取error信息
+        const lines = value.split('\n')
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].startsWith('data:')) {
+            try {
+              const errorData = JSON.parse(lines[i].substring(5).trim())
+              errorInfo = errorData
+              break
+            } catch (e) {
+              console.error('解析错误数据失败:', e)
+            }
+          }
+        }
       }
-
-      // 解析流式响应中的JSON数据
-      const parsedResult = parseStreamResponse(fullResponse)
-
-      results.push({
-        fileIndex: i + 1,
-        fileUrl,
-        result: parsedResult,
-      })
-
-      console.log(`第 ${i + 1} 个文件处理完成`)
     }
 
-    // 返回所有文件的分析结果
+    // 如果有错误，返回错误信息
+    if (hasError && errorInfo) {
+      return {
+        success: false,
+        error: true,
+        error_code: errorInfo.error_code,
+        error_message: errorInfo.error_message,
+        debug_url: errorInfo.debug_url,
+      }
+    }
+
+    // 解析流式响应中的JSON数据
+    const parsedResult = parseStreamResponse(fullResponse)
+
+    // 返回分析结果
     return {
-      success: true,
-      totalFiles: fileUrls.length,
-      results,
+      success: parsedResult.success,
+      fileUrl,
+      result: parsedResult,
     }
   } catch (error: any) {
     console.error('Coze Workflow API调用失败:', error)

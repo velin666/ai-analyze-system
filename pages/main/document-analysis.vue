@@ -861,6 +861,141 @@
               </div>
             </div> -->
 
+            <!-- 分页结果展示 -->
+            <div v-if="analysisResults.length > 0" class="mt-6">
+              <h3
+                class="text-md font-semibold text-gray-800 mb-4 flex items-center justify-between"
+              >
+                <span>文件分析详情 (共 {{ analysisResults.length }} 个)</span>
+                <button
+                  v-if="allReportUrls.length > 0"
+                  @click="batchExportReports"
+                  class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  批量导出报告 ({{ allReportUrls.length }})
+                </button>
+              </h3>
+
+              <!-- 文件列表 -->
+              <div class="space-y-4">
+                <div
+                  v-for="result in paginatedResults"
+                  :key="result.fileIndex"
+                  class="border rounded-lg p-4"
+                  :class="
+                    result.error
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300 bg-white'
+                  "
+                >
+                  <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm font-semibold text-gray-700">
+                        文件 #{{ result.fileIndex }}
+                      </span>
+                      <span
+                        v-if="result.error"
+                        class="px-2 py-1 bg-red-200 text-red-800 text-xs rounded"
+                      >
+                        失败
+                      </span>
+                      <span
+                        v-else
+                        class="px-2 py-1 bg-green-200 text-green-800 text-xs rounded"
+                      >
+                        成功
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- 错误信息 -->
+                  <div v-if="result.error" class="text-sm text-red-700 mb-2">
+                    <strong>错误:</strong> {{ result.error_message }}
+                  </div>
+
+                  <!-- 成功结果 -->
+                  <div v-else-if="result.result?.content" class="space-y-3">
+                    <div
+                      class="bg-gray-50 p-3 rounded text-sm max-h-64 overflow-y-auto whitespace-pre-wrap"
+                    >
+                      {{ result.result.content }}
+                    </div>
+
+                    <!-- 提取的URL -->
+                    <div
+                      v-if="extractUrls(result.result.content).length > 0"
+                      class="space-y-2"
+                    >
+                      <div class="text-xs font-semibold text-gray-600">
+                        报告文件:
+                      </div>
+                      <div class="space-y-1">
+                        <div
+                          v-for="(url, idx) in extractUrls(
+                            result.result.content
+                          )"
+                          :key="idx"
+                          class="flex items-center justify-between bg-blue-50 p-2 rounded"
+                        >
+                          <span class="text-xs text-blue-700 truncate flex-1">{{
+                            url
+                          }}</span>
+                          <button
+                            @click="
+                              exportSingleReport(
+                                url,
+                                `report_${result.fileIndex}_${idx + 1}.docx`
+                              )
+                            "
+                            class="ml-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                          >
+                            下载
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 分页控制 -->
+              <div
+                v-if="totalPages > 1"
+                class="flex items-center justify-center space-x-2 mt-6"
+              >
+                <button
+                  @click="currentPage = Math.max(1, currentPage - 1)"
+                  :disabled="currentPage === 1"
+                  class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  上一页
+                </button>
+                <span class="text-sm text-gray-600">
+                  第 {{ currentPage }} / {{ totalPages }} 页
+                </span>
+                <button
+                  @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                  :disabled="currentPage === totalPages"
+                  class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  下一页
+                </button>
+              </div>
+            </div>
+
             <!-- 操作按钮 -->
             <div
               class="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-200"
@@ -914,7 +1049,7 @@
 </template>
 
 <script setup lang="ts">
-  import { CozeAPI } from '@coze/api'
+  import { message } from 'ant-design-vue'
 
   // 页面标题
   definePageMeta({
@@ -929,6 +1064,9 @@
   const progress = ref(0)
   const currentStep = ref('')
   const analysisResult = ref<any>(null)
+  const analysisResults = ref<any[]>([])
+  const currentPage = ref(1)
+  const pageSize = ref(10)
 
   // 文档拆分相关
   const pagesPerFile = ref(30)
@@ -1012,6 +1150,45 @@
     return date.toLocaleTimeString()
   }
 
+  // Toast提示函数
+  const showToast = (
+    content: string,
+    type: 'success' | 'error' | 'warning' = 'error'
+  ) => {
+    message[type](content)
+  }
+
+  // 计算分页数据
+  const paginatedResults = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return analysisResults.value.slice(start, end)
+  })
+
+  const totalPages = computed(() => {
+    return Math.ceil(analysisResults.value.length / pageSize.value)
+  })
+
+  // 提取content中的URL
+  const extractUrls = (content: string): string[] => {
+    if (!content) return []
+    const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g
+    const matches = content.match(urlRegex)
+    return matches || []
+  }
+
+  // 获取所有报告URL
+  const allReportUrls = computed(() => {
+    const urls: string[] = []
+    analysisResults.value.forEach(result => {
+      if (result.result?.content) {
+        const extractedUrls = extractUrls(result.result.content)
+        urls.push(...extractedUrls)
+      }
+    })
+    return urls
+  })
+
   const analyzeDocument = async () => {
     isAnalyzing.value = true
     progress.value = 0
@@ -1027,7 +1204,7 @@
       }
     } catch (error: any) {
       console.error('分析失败:', error)
-      alert(error.message || '分析失败，请重试')
+      message.error(error.message || '分析失败，请重试')
       // 显示模拟结果用于演示
       // showMockResult()
     } finally {
@@ -1061,13 +1238,10 @@
             throw new Error('拆分结果中缺少文件ID，请重新拆分文档')
           }
 
-          const urlResponse = await $fetch<any>(
-            '/api/files/split-and-get-urls',
-            {
-              method: 'POST',
-              body: { fileId: originalFileId },
-            }
-          )
+          const urlResponse = await $fetch('/api/files/split-and-get-urls', {
+            method: 'POST',
+            body: { fileId: originalFileId },
+          })
 
           if (
             !urlResponse ||
@@ -1081,18 +1255,21 @@
           console.log(`成功获取 ${fileUrls.length} 个拆分文件的URL`)
         } catch (error: any) {
           console.error('获取拆分文件URL失败:', error)
-          alert(`获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`)
+          showToast(
+            `获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`,
+            'error'
+          )
           return
         }
       } else {
         // 单个文件：上传到本地服务器
         currentStep.value = '正在上传文件到服务器...'
-        progress.value = 20
+        progress.value = 10
 
         const formData = new FormData()
         formData.append('file', selectedFile.value)
 
-        const uploadResponse = await $fetch<any>('/api/files/upload', {
+        const uploadResponse = await $fetch('/api/files/upload', {
           method: 'POST',
           body: formData,
         })
@@ -1105,33 +1282,98 @@
         console.log('文件上传成功，URL:', uploadResponse.url)
       }
 
-      // 调用Coze工作流
-      currentStep.value = '正在调用AI工作流分析...'
-      progress.value = 40
+      // 重置结果数组
+      analysisResults.value = []
+      currentPage.value = 1
 
-      const workflowResponse = await $fetch<any>('/api/coze/workflow', {
-        method: 'POST',
-        body: {
-          fileUrls,
-          tableSummary: selectedFile.value.name,
-        },
-      })
-      progress.value = 60
-      console.log('工作流分析响应:', workflowResponse)
+      // 在前端循环调用API，每次处理一个文件
+      const totalFiles = fileUrls.length
+      for (let i = 0; i < totalFiles; i++) {
+        const fileUrl = fileUrls[i]
+        currentStep.value = `正在分析第 ${i + 1}/${totalFiles} 个文件...`
+        progress.value = 20 + (i / totalFiles) * 70
 
-      // 处理分析结果
-      if (workflowResponse.success && workflowResponse.results) {
-        currentStep.value = '分析完成，正在生成报告...'
-        progress.value = 80
+        try {
+          console.log(`开始分析第 ${i + 1}/${totalFiles} 个文件: ${fileUrl}`)
 
-        // 合并所有文件的分析结果
-        analysisResult.value = mergeAnalysisResults(workflowResponse.results)
-        console.log(`output->`, analysisResult.value)
+          const workflowResponse = await $fetch('/api/coze/workflow', {
+            method: 'POST',
+            body: {
+              fileUrl,
+              tableSummary: `${selectedFile.value.name} - 第${i + 1}部分`,
+            },
+          })
 
-        progress.value = 100
-        currentStep.value = '分析完成'
-      } else {
-        throw new Error('工作流分析失败')
+          console.log(`第 ${i + 1} 个文件分析响应:`, workflowResponse)
+
+          // 检查是否有错误
+          if (workflowResponse.error && workflowResponse.error_message) {
+            showToast(
+              `第 ${i + 1} 个文件分析失败: ${workflowResponse.error_message}`,
+              'error'
+            )
+            console.error(`第 ${i + 1} 个文件错误:`, workflowResponse)
+
+            // 即使出错也记录结果
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              error: true,
+              error_message: workflowResponse.error_message,
+              error_code: workflowResponse.error_code,
+            })
+          } else if (workflowResponse.success) {
+            // 成功的结果
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              result: workflowResponse.result,
+            })
+            console.log(`第 ${i + 1} 个文件分析完成`)
+          } else {
+            // 未知错误
+            showToast(`第 ${i + 1} 个文件分析失败: 未知错误`, 'error')
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              error: true,
+              error_message: '未知错误',
+            })
+          }
+        } catch (error: any) {
+          console.error(`第 ${i + 1} 个文件分析失败:`, error)
+          showToast(
+            `第 ${i + 1} 个文件分析失败: ${error.message || '网络错误'}`,
+            'error'
+          )
+
+          analysisResults.value.push({
+            fileIndex: i + 1,
+            fileUrl,
+            error: true,
+            error_message: error.message || '网络错误',
+          })
+        }
+      }
+
+      progress.value = 90
+      currentStep.value = '分析完成，正在生成报告...'
+
+      // 合并所有成功的文件结果用于兼容旧的显示逻辑
+      const successResults = analysisResults.value.filter(r => !r.error)
+      if (successResults.length > 0) {
+        analysisResult.value = mergeAnalysisResults(successResults)
+        console.log(`合并后的分析结果:`, analysisResult.value)
+      }
+
+      progress.value = 100
+      currentStep.value = `分析完成！成功: ${successResults.length}/${totalFiles}`
+
+      if (successResults.length < totalFiles) {
+        showToast(
+          `部分文件分析失败，成功: ${successResults.length}/${totalFiles}`,
+          'warning'
+        )
       }
     } catch (error: any) {
       console.error('Coze工作流分析失败:', error)
@@ -1455,6 +1697,63 @@
     URL.revokeObjectURL(url)
   }
 
+  // 导出单个报告（从URL下载）
+  const exportSingleReport = async (url: string, fileName: string) => {
+    try {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      showToast('报告下载已开始', 'success')
+    } catch (error: any) {
+      console.error('下载报告失败:', error)
+      showToast('下载报告失败: ' + error.message, 'error')
+    }
+  }
+
+  // 批量导出报告
+  const batchExportReports = async () => {
+    if (allReportUrls.value.length === 0) {
+      showToast('没有可导出的报告', 'warning')
+      return
+    }
+
+    try {
+      currentStep.value = `正在打包 ${allReportUrls.value.length} 个报告...`
+      isAnalyzing.value = true
+
+      const response = await $fetch('/api/reports/batch-export', {
+        method: 'POST',
+        body: {
+          reportUrls: allReportUrls.value,
+        },
+      })
+
+      if (response.success && response.downloadUrl) {
+        // 下载ZIP文件
+        const link = document.createElement('a')
+        link.href = response.downloadUrl
+        link.download = response.fileName || 'reports.zip'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast(`成功打包 ${response.totalFiles} 个报告`, 'success')
+      } else {
+        throw new Error('批量导出失败')
+      }
+    } catch (error: any) {
+      console.error('批量导出失败:', error)
+      showToast('批量导出失败: ' + error.message, 'error')
+    } finally {
+      isAnalyzing.value = false
+      currentStep.value = ''
+    }
+  }
+
   const clearResults = () => {
     analysisResult.value = null
     selectedFile.value = null
@@ -1503,7 +1802,7 @@
       }
     } catch (error: any) {
       console.error('拆分失败:', error)
-      alert(error.message || '拆分失败，请重试')
+      message.error(error.message || '拆分失败，请重试')
     } finally {
       isSplittingDocument.value = false
     }

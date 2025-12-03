@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  ssr: false,
+  // ssr: false,
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     '@nuxtjs/google-fonts',
     'nuxt3-winston-log',
   ],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', 'ant-design-vue/dist/reset.css'],
   googleFonts: {
     families: {
       Inter: [400, 500, 600, 700],
@@ -24,6 +24,7 @@ export default defineNuxtConfig({
     level: 'info',
     format: 'json',
   },
+
   runtimeConfig: {
     deepseekApiKey: process.env.DEEPSEEK_API_KEY,
     deepseekApiUrl:
@@ -61,5 +62,20 @@ export default defineNuxtConfig({
   },
   typescript: {
     strict: true,
+  },
+  app: {
+    head: {
+      charset: 'utf-16',
+      title: 'AI文档分析系统',
+      meta: [{ name: 'I系统', content: 'AI system' }],
+    },
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['dayjs'],
+    },
+    ssr: {
+      noExternal: ['ant-design-vue'],
+    },
   },
 })
