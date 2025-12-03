@@ -398,7 +398,7 @@ def split_docx_by_page_range(input_path: str, output_dir: str, pages_per_file: i
                     pass
                 
                 # 保存文件
-                out_filename = f"第{start_page}-{end_page}页.docx"
+                out_filename = f"第{start_page}-{end_page}页.docx" if pages_per_file != 1 else f"第{file_index}个文件.docx"
                 out_path = os.path.join(output_dir, out_filename)
                 print(f"  保存文件: {out_filename}")
                 print(f"PROGRESS:FILE_STEP:{file_index}:保存文件:90")
