@@ -16,15 +16,25 @@ def estimate_page_breaks(doc):
     """估算文档中的分页符位置（段落索引）"""
     page_breaks = [0]  # 第一页从索引0开始
     
+    # 定义Word命名空间
+    from docx.oxml.ns import qn
+    
     for i, para in enumerate(doc.paragraphs):
         # 检查段落是否包含分页符
-        if para._element.xpath('.//w:br[@w:type="page"]', namespaces=para._element.nsmap):
-            page_breaks.append(i + 1)
+        # 查找 w:br 元素，并检查 w:type 属性是否为 "page"
+        for br in para._element.iter(qn('w:br')):
+            br_type = br.get(qn('w:type'))
+            if br_type == 'page':
+                page_breaks.append(i + 1)
+                break
         
         # 检查段落格式中的分页设置
-        if para.paragraph_format.page_break_before:
-            if i not in page_breaks:
-                page_breaks.append(i)
+        try:
+            if para.paragraph_format.page_break_before:
+                if i not in page_breaks:
+                    page_breaks.append(i)
+        except:
+            pass
     
     return page_breaks
 
