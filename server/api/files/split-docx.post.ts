@@ -75,21 +75,33 @@ export default defineEventHandler(async event => {
       throw error
     }
 
-    // 读取输出目录中的文件
+    // 读取输出目录中的文件并获取文件大小
     const outputFiles = await fs.readdir(outputDir)
-    const docxFiles = outputFiles.filter(file => file.endsWith('.docx'))
+    const docxFileNames = outputFiles.filter(file => file.endsWith('.docx'))
 
-    if (docxFiles.length === 0) {
+    if (docxFileNames.length === 0) {
       throw createError({
         statusCode: 500,
         statusMessage: '拆分失败，未生成任何文件',
       })
     }
 
+    // 获取文件信息（名称和大小）
+    const docxFiles = await Promise.all(
+      docxFileNames.map(async fileName => {
+        const filePath = join(outputDir, fileName)
+        const stats = await fs.stat(filePath)
+        return {
+          name: fileName,
+          size: stats.size,
+        }
+      })
+    )
+
     // 创建ZIP文件
     const zip = new AdmZip()
     for (const docxFile of docxFiles) {
-      const filePath = join(outputDir, docxFile)
+      const filePath = join(outputDir, docxFile.name)
       zip.addLocalFile(filePath)
     }
 

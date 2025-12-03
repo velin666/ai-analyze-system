@@ -197,15 +197,27 @@ export default defineEventHandler(async event => {
       }, 300000)
     })
 
-    // 读取输出文件
+    // 读取输出文件并获取文件大小
     const outputFiles = await fs.readdir(outputDir)
-    const docxFiles = outputFiles.filter(file => file.endsWith('.docx'))
+    const docxFileNames = outputFiles.filter(file => file.endsWith('.docx'))
 
-    if (docxFiles.length === 0) {
+    if (docxFileNames.length === 0) {
       sendMessage('error', { message: '拆分失败，未生成任何文件' })
       event.node.res.end()
       return
     }
+
+    // 获取文件信息（名称和大小）
+    const docxFiles = await Promise.all(
+      docxFileNames.map(async fileName => {
+        const filePath = join(outputDir, fileName)
+        const stats = await fs.stat(filePath)
+        return {
+          name: fileName,
+          size: stats.size,
+        }
+      })
+    )
 
     // 创建ZIP文件
     sendMessage('info', { message: '正在创建ZIP文件...' })
@@ -218,7 +230,7 @@ export default defineEventHandler(async event => {
 
     for (let i = 0; i < docxFiles.length; i++) {
       const docxFile = docxFiles[i]
-      const filePath = join(outputDir, docxFile)
+      const filePath = join(outputDir, docxFile.name)
       zip.addLocalFile(filePath)
 
       // 发送ZIP创建进度
@@ -228,7 +240,7 @@ export default defineEventHandler(async event => {
         current: i + 1,
         total: docxFiles.length,
         percentage: zipProgress,
-        fileName: docxFile,
+        fileName: docxFile.name,
       })
 
       // 模拟一点延迟，让用户能看到进度

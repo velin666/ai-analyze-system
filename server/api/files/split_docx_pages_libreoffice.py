@@ -1,11 +1,14 @@
 """
 使用 LibreOffice 拆分 DOCX 文档（跨平台方案）
 支持 Linux/macOS/Windows
+修复 Linux 平台拆分问题 - 确保资源正确清理
+整合超时处理机制
 """
 import os
 import re
 import sys
 import time
+import gc
 from pathlib import Path
 
 # LibreOffice UNO 导入
@@ -31,59 +34,94 @@ def sanitize_filename(name: str) -> str:
     return name
 
 
-def connect_to_libreoffice(host='localhost', port=2002, max_retries=3):
-    """连接到 LibreOffice 服务"""
+def connect_to_libreoffice(host='localhost', port=2002, max_retries=3, timeout=10):
+    """连接到 LibreOffice 服务 - 带超时保护"""
     print(f"PROGRESS:FILE_STEP:0:连接LibreOffice:5")
+    
+    import platform
+    use_signal_timeout = platform.system() != 'Windows'
+    
+    if use_signal_timeout:
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError(f"连接超时 ({timeout}秒)")
     
     for attempt in range(max_retries):
         try:
-            # 获取本地组件上下文
-            local_context = uno.getComponentContext()
-            resolver = local_context.ServiceManager.createInstanceWithContext(
-                "com.sun.star.bridge.UnoUrlResolver", local_context
-            )
+            print(f"尝试连接 LibreOffice (第 {attempt + 1}/{max_retries} 次，超时 {timeout}秒)...")
             
-            # 连接到 LibreOffice
-            connection_string = f"uno:socket,host={host},port={port};urp;StarOffice.ComponentContext"
-            ctx = resolver.resolve(connection_string)
-            smgr = ctx.ServiceManager
-            desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+            if use_signal_timeout:
+                # Linux/macOS: 使用 signal 超时
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout)
             
-            print(f"✓ 成功连接到 LibreOffice (尝试 {attempt + 1}/{max_retries})")
-            print(f"PROGRESS:FILE_STEP:0:已连接:10")
-            return desktop, ctx
+            try:
+                # 获取本地组件上下文
+                local_context = uno.getComponentContext()
+                resolver = local_context.ServiceManager.createInstanceWithContext(
+                    "com.sun.star.bridge.UnoUrlResolver", local_context
+                )
+                
+                # 连接到 LibreOffice
+                connection_string = f"uno:socket,host={host},port={port};urp;StarOffice.ComponentContext"
+                print(f"连接字符串: {connection_string}")
+                ctx = resolver.resolve(connection_string)
+                smgr = ctx.ServiceManager
+                desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+                
+                if use_signal_timeout:
+                    signal.alarm(0)  # 取消超时
+                
+                print(f"✓ 成功连接到 LibreOffice (尝试 {attempt + 1}/{max_retries})")
+                print(f"PROGRESS:FILE_STEP:0:已连接:10")
+                return desktop, ctx
+                
+            except TimeoutError as te:
+                if use_signal_timeout:
+                    signal.alarm(0)
+                raise te
+            except Exception as inner_e:
+                if use_signal_timeout:
+                    signal.alarm(0)
+                raise inner_e
             
+        except TimeoutError as te:
+            print(f"连接超时 (尝试 {attempt + 1}/{max_retries}): {te}")
         except Exception as e:
             error_msg = str(e)
             print(f"连接失败 (尝试 {attempt + 1}/{max_retries}): {error_msg}")
             
-            if attempt < max_retries - 1:
-                print("等待2秒后重试...")
-                time.sleep(2)
-            else:
-                # 提供详细的错误诊断信息
-                error_details = (
-                    f"\n{'='*60}\n"
-                    f"无法连接到 LibreOffice 服务\n"
-                    f"{'='*60}\n"
-                    f"错误信息: {error_msg}\n"
-                    f"连接地址: {host}:{port}\n\n"
-                    f"可能的原因:\n"
-                    f"  1. LibreOffice 服务未启动\n"
-                    f"  2. 端口 {port} 被防火墙阻止\n"
-                    f"  3. 服务崩溃或正在重启\n\n"
-                    f"解决方案:\n"
-                    f"  # 方法 1: 使用 npm 脚本（推荐）\n"
-                    f"  pnpm libreoffice:start\n"
-                    f"  pnpm libreoffice:status\n\n"
-                    f"  # 方法 2: 手动启动\n"
-                    f"  libreoffice --headless --accept='socket,host={host},port={port};urp;' --nofirststartwizard &\n\n"
-                    f"  # 方法 3: 运行诊断\n"
-                    f"  pnpm diagnose:linux\n\n"
-                    f"详细文档: docs/FIX_LIBREOFFICE_CONNECTION.md\n"
-                    f"{'='*60}\n"
-                )
-                raise Exception(error_details)
+        if attempt < max_retries - 1:
+            print("等待3秒后重试...")
+            time.sleep(3)
+    
+    # 所有尝试都失败了
+    error_details = (
+        f"\n{'='*60}\n"
+        f"无法连接到 LibreOffice 服务\n"
+        f"{'='*60}\n"
+        f"连接地址: {host}:{port}\n"
+        f"超时设置: {timeout}秒\n"
+        f"重试次数: {max_retries}\n\n"
+        f"可能的原因:\n"
+        f"  1. LibreOffice 服务未启动或响应慢\n"
+        f"  2. 端口 {port} 被防火墙阻止\n"
+        f"  3. 服务崩溃或正在重启\n"
+        f"  4. 系统负载过高\n\n"
+        f"解决方案:\n"
+        f"  # 方法 1: 重启 LibreOffice 服务\n"
+        f"  pnpm libreoffice:restart\n\n"
+        f"  # 方法 2: 检查服务状态\n"
+        f"  pnpm libreoffice:status\n\n"
+        f"  # 方法 3: 运行系统诊断\n"
+        f"  pnpm diagnose:linux\n\n"
+        f"  # 方法 4: 强制重启所有服务\n"
+        f"  pnpm pm2:restart\n\n"
+        f"详细文档: docs/FIX_LIBREOFFICE_CONNECTION.md\n"
+        f"{'='*60}\n"
+    )
+    raise Exception(error_details)
 
 
 def make_property_value(name, value):
@@ -164,6 +202,7 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
             print(f"\nPROGRESS:FILE_START:{file_index}")
             print(f"正在处理第 {file_index} 个文件 (页 {start_page}-{end_page})")
             
+            new_doc = None
             try:
                 # 创建新文档
                 print(f"PROGRESS:FILE_STEP:{file_index}:创建新文档:10")
@@ -174,12 +213,13 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 # 复制指定页面范围的内容
                 print(f"PROGRESS:FILE_STEP:{file_index}:选择页面范围:30")
                 
-                # 使用更简单可靠的方法：全选然后复制
-                # 跳转到起始页
+                # 重置原文档的光标位置到起始页（重要：Linux平台需要）
                 try:
                     view_cursor.jumpToPage(start_page)
                 except Exception as e:
-                    print(f"警告: jumpToPage 失败，使用全文档方式: {e}")
+                    print(f"警告: jumpToPage 失败: {e}")
+                    # 回退到文档开始
+                    view_cursor.gotoStart(False)
                 
                 # 使用 Dispatcher 执行选择和复制操作
                 dispatcher = ctx.ServiceManager.createInstance("com.sun.star.frame.DispatchHelper")
@@ -213,14 +253,24 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 print(f"PROGRESS:FILE_STEP:{file_index}:复制内容:50")
                 dispatcher.executeDispatch(controller.Frame, ".uno:Copy", "", 0, ())
                 
+                # 给剪贴板一点时间（Linux平台需要）
+                time.sleep(0.1)
+                
                 # 粘贴到新文档
                 print(f"PROGRESS:FILE_STEP:{file_index}:粘贴到新文档:70")
                 new_controller = new_doc.getCurrentController()
                 dispatcher.executeDispatch(new_controller.Frame, ".uno:Paste", "", 0, ())
                 
+                # 等待粘贴完成（Linux平台需要）
+                time.sleep(0.1)
+                
                 # 保存新文档
                 print(f"PROGRESS:FILE_STEP:{file_index}:保存文档:90")
-                output_filename = f"split_pages_{start_page}-{end_page}.docx"
+                if total_files == 1:
+                    output_filename = f"split_complete.docx"
+                else:
+                    output_filename = f"split_part_{file_index}_pages_{start_page}-{end_page}.docx"
+                    
                 output_path = os.path.join(output_dir, output_filename)
                 output_url = uno.systemPathToFileUrl(os.path.abspath(output_path))
                 
@@ -232,19 +282,31 @@ def split_docx_by_pages_libreoffice(input_path: str, output_dir: str, pages_per_
                 new_doc.storeToURL(output_url, save_props)
                 print(f"✓ 已保存: {output_filename}")
                 
-                # 关闭新文档
-                new_doc.close(True)
-                
                 print(f"PROGRESS:FILE_COMPLETE:{file_index}:{total_files}")
                 
             except Exception as e:
                 print(f"处理第 {file_index} 个文件时出错: {e}")
                 print(f"PROGRESS:FILE_ERROR:{file_index}:{str(e)}")
-                if 'new_doc' in locals():
+                
+            finally:
+                # 关键：确保新文档被正确关闭（修复Linux平台问题）
+                if new_doc is not None:
                     try:
+                        print(f"关闭第 {file_index} 个文档...")
                         new_doc.close(True)
-                    except:
-                        pass
+                        new_doc = None
+                    except Exception as close_error:
+                        print(f"关闭文档时出错: {close_error}")
+                
+                # 重置原文档的光标（重要：Linux平台需要）
+                try:
+                    view_cursor.gotoStart(False)
+                except Exception as cursor_error:
+                    print(f"重置光标时出错: {cursor_error}")
+                
+                # 清理内存（Linux平台需要）
+                gc.collect()
+                time.sleep(0.2)
             
             file_index += 1
             current_page = end_page + 1
