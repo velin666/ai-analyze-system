@@ -32,7 +32,14 @@ export default defineEventHandler(async event => {
     const inputPath = join(process.cwd(), 'uploads', `${fileId}.docx`)
     const outputDir = join(process.cwd(), 'uploads', `split_${fileId}`)
 
-    // 确保输出目录存在
+    // 清理旧的输出目录（如果存在）
+    try {
+      await fs.rm(outputDir, { recursive: true, force: true })
+    } catch (error) {
+      // 忽略目录不存在的错误
+    }
+
+    // 创建全新的输出目录
     await fs.mkdir(outputDir, { recursive: true })
 
     sendMessage('info', { message: '开始处理文件...' })
@@ -233,6 +240,14 @@ export default defineEventHandler(async event => {
     // 保存ZIP文件
     const zipFileName = `split_${fileId}.zip`
     const zipPath = join(process.cwd(), 'uploads', zipFileName)
+
+    // 删除旧的ZIP文件（如果存在）
+    try {
+      await fs.unlink(zipPath)
+    } catch (error) {
+      // 忽略文件不存在的错误
+    }
+
     zip.writeZip(zipPath)
 
     // 生成下载链接

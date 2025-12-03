@@ -89,6 +89,7 @@ dist
 
 # Gatsby files
 .cache/
+server/api/files/__pycache__
 
 # Storybook build outputs
 .out
