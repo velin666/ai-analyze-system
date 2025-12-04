@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
+    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && nuxt build",
     "dev": "nuxt dev --host 0.0.0.0 --port 5200",
     "dev:with-libreoffice": "node scripts/start-with-libreoffice.js",
-    "generate": "nuxt generate",
+    "generate": "set NODE_OPTIONS=--max-old-space-size=4096 && nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "pm2:start": "pm2 start ecosystem.config.cjs",
