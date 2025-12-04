@@ -18,36 +18,32 @@ def get_platform_handler():
     """根据平台获取对应的处理函数（按优先级）"""
     system = platform.system()
     
-    # 优先级1: 尝试使用 python-docx（跨平台，最可靠）
-    try:
-        from split_docx_pages_python_docx import split_docx_by_sections
-        return split_docx_by_sections, "python-docx (跨平台)"
-    except ImportError:
-        print("提示: python-docx 未安装，尝试其他方案...")
-        print("  建议安装: pip install python-docx")
-    
-    # 优先级2: Windows 平台使用 win32com
+    # 优先级1: Windows 平台使用 win32com（最精确）
     if system == "Windows":
         try:
             from split_docx_pages import split_docx_by_page_range
             return split_docx_by_page_range, "Windows (win32com)"
-        except ImportError:
-            print("警告: pywin32 未安装，尝试使用 LibreOffice")
+        except ImportError as e:
+            print(f"警告: win32com 不可用 ({e})")
+            print("  请确保已安装: pip install pywin32")
+            print("  并且系统已安装 Microsoft Word")
+            print("  尝试备选方案...")
     
-    # 优先级3: Linux/macOS 或 Windows 回退：使用 LibreOffice
+    # 优先级2: 尝试使用 python-docx（备选方案）
     try:
-        from split_docx_pages_libreoffice import split_docx_by_pages_libreoffice
-        return split_docx_by_pages_libreoffice, "LibreOffice (UNO)"
+        from split_docx_pages_python_docx import split_docx_by_sections
+        print("提示: 使用 python-docx 作为备选方案")
+        return split_docx_by_sections, "python-docx (备选)"
     except ImportError:
-        print(f"错误: 未找到可用的 DOCX 处理库")
-        print(f"\n推荐方案:")
-        print(f"  pip install python-docx  # 跨平台，最推荐")
-        print(f"\n备选方案:")
-        print(f"  - Windows: pip install pywin32")
-        print(f"  - Linux/macOS: 安装 LibreOffice 和 pyuno")
-        print(f"    Ubuntu/Debian: sudo apt-get install libreoffice python3-uno")
-        print(f"    macOS: brew install libreoffice && pip install pyuno")
-        sys.exit(1)
+        print("提示: python-docx 未安装")
+        print("  建议安装: pip install python-docx")
+    
+    # 错误：没有可用的处理方案
+    print(f"\n错误: 未找到可用的 DOCX 处理库")
+    print(f"\n请安装以下依赖之一:")
+    print(f"  1. [推荐] pip install pywin32 (需要安装 Microsoft Word)")
+    print(f"  2. [备选] pip install python-docx")
+    sys.exit(1)
 
 
 def main():

@@ -6,10 +6,13 @@
 **统一入口脚本**，自动检测平台并选择合适的实现方式。
 
 **功能：**
-- 自动检测操作系统（Windows/Linux/macOS）
-- Windows 优先使用 `win32com`，失败则回退到 LibreOffice
-- Linux/macOS 使用 LibreOffice
+- 自动检测操作系统（Windows）
+- Windows 优先使用 `win32com`（最精确），失败则回退到 python-docx
 - 统一的命令行接口
+
+**优先级顺序：**
+1. **win32com** (需要 Microsoft Word) - 最精确
+2. **python-docx** (备选) - 无需 Word
 
 **使用方法：**
 ```bash

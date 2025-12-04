@@ -38,22 +38,23 @@
 
 ### 文档拆分依赖（按优先级）
 
-**推荐方案（跨平台）：**
+**Windows推荐方案（最精确）：**
+```bash
+# 1. 安装 pywin32
+pip install pywin32
+
+# 2. 注册 COM 组件（必须）
+python -c "import sys; import os; exec(open(os.path.join(sys.prefix, 'Scripts', 'pywin32_postinstall.py')).read())" -install
+
+# 3. 确保已安装 Microsoft Word
+```
+
+**备选方案（无需Word）：**
 ```bash
 pip install python-docx
 ```
 
-**备选方案：**
-- **Windows**: `pip install pywin32`
-- **Linux/macOS**: LibreOffice 24.2.7.2 420(Build:2) + python3-uno
-  ```bash
-  # Ubuntu/Debian
-  sudo apt-get install libreoffice python3-uno
-  
-  # macOS
-  brew install libreoffice
-  pip install pyuno
-  ```
+> **注意**：项目已配置为Windows环境下优先使用win32com（需要安装Microsoft Word），如果win32com不可用，会自动降级到python-docx。
 
 ### 安装步骤
 

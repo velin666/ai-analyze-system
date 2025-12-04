@@ -1,3 +1,6 @@
 # Python dependencies for DOCX processing
+# 优先级1: pywin32 (Windows下最精确的解决方案，需要安装Microsoft Word)
 pywin32>=306
+
+# 优先级2: python-docx (备选方案，无需Word)
 python-docx>=1.1.0
