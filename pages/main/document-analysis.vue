@@ -87,7 +87,7 @@
                 <input
                   ref="fileInput"
                   type="file"
-                  accept=".doc,.docx,.pdf,.txt"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,.txt"
                   @change="handleFileSelect"
                   class="hidden"
                 />
@@ -146,7 +146,10 @@
           </div>
 
           <!-- DOCX文档拆分区域 -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div
+            v-if="isDocxFile"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
             <h2
               class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
             >
@@ -465,9 +468,14 @@
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          <span class="truncate">{{ typeof file === 'string' ? file : file.name }}</span>
+                          <span class="truncate">{{
+                            typeof file === 'string' ? file : file.name
+                          }}</span>
                         </div>
-                        <span v-if="file.size" class="text-gray-500 ml-2 flex-shrink-0">
+                        <span
+                          v-if="file.size"
+                          class="text-gray-500 ml-2 flex-shrink-0"
+                        >
                           {{ formatFileSize(file.size) }}
                         </span>
                       </div>
@@ -496,6 +504,43 @@
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Excel提示词输入区域 -->
+          <div
+            v-if="isExcelFile"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
+            <h2
+              class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
+            >
+              <svg
+                class="w-5 h-5 mr-2 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Excel提示词
+            </h2>
+            <p class="text-sm text-gray-600 mb-3">
+              请输入对Excel分析的业务需求，例如：更换品牌、字段校验、指标统计等。
+            </p>
+            <a-textarea
+              v-model:value="excelWorkRequirements"
+              :rows="4"
+              placeholder="例如：帮我把控制器、触摸屏、模块从西门子替换成三菱同规格型号。原来其他型号不用变。"
+              allowClear
+            />
+            <div class="text-xs text-gray-500 mt-2">
+              注：Excel分析会将该提示词作为WorkRequirements传入AI工作流。
             </div>
           </div>
 
@@ -1078,6 +1123,9 @@
   const isSplittingDocument = ref(false)
   const splitResult = ref<any>(null)
 
+  // Excel提示词
+  const excelWorkRequirements = ref<string>('')
+
   // 拆分进度相关
   const splitProgress = ref({
     total: 0,
@@ -1095,12 +1143,25 @@
 
   // 计算属性
   const canAnalyze = computed(() => {
-    return selectedFile.value || textInput.value.trim().length > 0
+    if (selectedFile.value) {
+      // Excel文件需填写提示词
+      if (isExcelFile.value) {
+        return excelWorkRequirements.value.trim().length > 0
+      }
+      return true
+    }
+    return textInput.value.trim().length > 0
   })
 
   const isDocxFile = computed(() => {
     if (!selectedFile.value) return false
     return selectedFile.value.name.toLowerCase().endsWith('.docx')
+  })
+
+  const isExcelFile = computed(() => {
+    if (!selectedFile.value) return false
+    const name = selectedFile.value.name.toLowerCase()
+    return name.endsWith('.xlsx') || name.endsWith('.xls')
   })
 
   // 方法
@@ -1195,6 +1256,16 @@
   })
 
   const analyzeDocument = async () => {
+    // Excel需提示词
+    if (
+      selectedFile.value &&
+      isExcelFile.value &&
+      !excelWorkRequirements.value.trim()
+    ) {
+      message.warning('请填写Excel提示词（WorkRequirements）')
+      return
+    }
+
     isAnalyzing.value = true
     progress.value = 0
     analysisResult.value = null
@@ -1221,6 +1292,85 @@
   const analyzeWithCozeWorkflow = async () => {
     if (!selectedFile.value) return
 
+    // Excel分支：上传并调用Excel工作流（含WorkRequirements）
+    if (isExcelFile.value) {
+      try {
+        currentStep.value = '正在上传Excel到服务器...'
+        progress.value = 10
+
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const uploadResponse = await $fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResponse || !uploadResponse.url) {
+          throw new Error('文件上传失败，未获取到文件URL')
+        }
+
+        const fileUrl = uploadResponse.url
+        console.log('Excel文件上传成功，URL:', fileUrl)
+
+        // 重置结果数组
+        analysisResults.value = []
+        currentPage.value = 1
+
+        currentStep.value = '正在调用Excel AI分析工作流...'
+        progress.value = 40
+
+        const workflowResponse = await $fetch('/api/coze/workflow-excel', {
+          method: 'POST',
+          body: {
+            fileUrl,
+            workRequirements: excelWorkRequirements.value,
+            tableSummary: `${selectedFile.value.name}`,
+          },
+        })
+
+        console.log('Excel分析响应:', workflowResponse)
+
+        // 处理响应
+        if (workflowResponse.error && workflowResponse.error_message) {
+          showToast(`Excel分析失败: ${workflowResponse.error_message}`, 'error')
+          console.error('Excel分析错误:', workflowResponse)
+
+          analysisResults.value.push({
+            fileIndex: 1,
+            fileUrl,
+            error: true,
+            error_message: workflowResponse.error_message,
+            error_code: workflowResponse.error_code,
+          })
+        } else if (workflowResponse.success) {
+          analysisResults.value.push({
+            fileIndex: 1,
+            fileUrl,
+            result: workflowResponse.result,
+          })
+          analysisResult.value = processWorkflowOutput(workflowResponse.result)
+          console.log('Excel分析完成')
+        } else {
+          showToast('Excel分析失败: 未知错误', 'error')
+          analysisResults.value.push({
+            fileIndex: 1,
+            fileUrl,
+            error: true,
+            error_message: '未知错误',
+          })
+        }
+
+        progress.value = 100
+        currentStep.value = 'Excel分析完成'
+      } catch (error: any) {
+        console.error('Excel工作流分析失败:', error)
+        throw error
+      }
+      return
+    }
+
+    // Word分支：原有逻辑
     try {
       let fileUrls: string[] = []
 
@@ -1818,7 +1968,9 @@
   const handleRealTimeProgress = (fileId: string, originalName: string) => {
     return new Promise<void>((resolve, reject) => {
       const eventSource = new EventSource(
-        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${pagesPerFile.value}&originalName=${encodeURIComponent(originalName)}`
+        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${
+          pagesPerFile.value
+        }&originalName=${encodeURIComponent(originalName)}`
       )
 
       eventSource.onmessage = event => {
