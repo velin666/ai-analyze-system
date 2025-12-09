@@ -1050,6 +1050,44 @@
             <div
               class="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-200"
             >
+              <!-- Excel修正按钮 (仅当有修正数据时显示) -->
+              <button
+                v-if="hasModificationData"
+                @click="generateModifiedExcel"
+                :disabled="isGeneratingModified"
+                class="px-4 py-2 text-white rounded-lg transition-colors flex items-center"
+                :class="modifiedExcelInfo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'"
+              >
+                <svg
+                  v-if="!isGeneratingModified"
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="w-4 h-4 mr-2 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                {{ modifyButtonText }}
+              </button>
               <button
                 @click="exportReport"
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -1126,6 +1164,11 @@
   // Excel提示词
   const excelWorkRequirements = ref<string>('')
 
+  // Excel修正相关
+  const isGeneratingModified = ref(false)
+  const modifiedExcelInfo = ref<any>(null)
+  const uploadedFileId = ref<string | null>(null)
+
   // 拆分进度相关
   const splitProgress = ref({
     total: 0,
@@ -1162,6 +1205,25 @@
     if (!selectedFile.value) return false
     const name = selectedFile.value.name.toLowerCase()
     return name.endsWith('.xlsx') || name.endsWith('.xls')
+  })
+
+  // 检查是否有修正数据
+  const hasModificationData = computed(() => {
+    if (!analysisResult.value || !isExcelFile.value) return false
+    
+    // 尝试提取修正数据
+    const content = analysisResult.value.rawContent || analysisResult.value.summary || ''
+    if (!content) return false
+    
+    // 简单检查是否包含JSON数组格式
+    return /\[\s*\{[\s\S]*?\}\s*\]/.test(content)
+  })
+
+  // 获取修正按钮文本
+  const modifyButtonText = computed(() => {
+    if (isGeneratingModified.value) return '生成中...'
+    if (modifiedExcelInfo.value) return '下载修正文件'
+    return '生成修正Excel'
   })
 
   // 方法
@@ -1240,7 +1302,10 @@
     if (!content) return []
     const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g
     const matches = content.match(urlRegex)
-    return matches || []
+    // 去除匹配到的URL中的中文、英文、数字、括号和中文括号
+    return (matches || []).map(v =>
+      v.replaceAll(/([、)）]|[\u4e00-\u9fa5])/g, '')
+    )
   }
 
   // 获取所有报告URL
@@ -1312,6 +1377,9 @@
 
         const fileUrl = uploadResponse.url
         console.log('Excel文件上传成功，URL:', fileUrl)
+
+        // 保存文件ID用于后续修正
+        uploadedFileId.value = uploadResponse.id || null
 
         // 重置结果数组
         analysisResults.value = []
@@ -1534,53 +1602,6 @@
       console.error('Coze工作流分析失败:', error)
       throw error
     }
-  }
-
-  // 轮询工作流状态
-  const pollWorkflowStatus = async (executeId: string) => {
-    const maxAttempts = 60 // 最多轮询60次
-    const pollInterval = 3000 // 每3秒轮询一次
-    let attempts = 0
-
-    while (attempts < maxAttempts) {
-      attempts++
-
-      try {
-        const statusResponse = await $fetch(
-          `/api/coze/workflow-status?executeId=${executeId}`
-        )
-        const status = (statusResponse as any).status
-
-        if (status === 'succeeded') {
-          // 工作流成功完成
-          currentStep.value = '分析完成，正在生成报告...'
-          progress.value = 100
-
-          // 处理输出结果
-          const output = (statusResponse as any).output
-          analysisResult.value = processWorkflowOutput(output)
-          return
-        } else if (status === 'failed') {
-          // 工作流失败
-          const errorMsg =
-            (statusResponse as any).errorMessage || '工作流执行失败'
-          throw new Error(errorMsg)
-        } else if (status === 'running') {
-          // 工作流仍在运行，更新进度
-          currentStep.value = `正在分析文档... (${attempts}/${maxAttempts})`
-          progress.value = 60 + (attempts / maxAttempts) * 30
-
-          // 等待后继续轮询
-          await new Promise(resolve => setTimeout(resolve, pollInterval))
-        }
-      } catch (error) {
-        console.error('查询工作流状态失败:', error)
-        throw error
-      }
-    }
-
-    // 超时
-    throw new Error('工作流执行超时，请稍后重试')
   }
 
   // 处理工作流输出
@@ -1913,6 +1934,78 @@
     analysisResult.value = null
     selectedFile.value = null
     textInput.value = ''
+    modifiedExcelInfo.value = null
+    uploadedFileId.value = null
+  }
+
+  // 生成修正Excel
+  const generateModifiedExcel = async () => {
+    if (!selectedFile.value || !uploadedFileId.value || !analysisResult.value) {
+      message.warning('缺少必要的文件信息')
+      return
+    }
+
+    // 如果已经生成过,直接下载
+    if (modifiedExcelInfo.value) {
+      downloadModifiedExcel()
+      return
+    }
+
+    isGeneratingModified.value = true
+
+    try {
+      currentStep.value = '正在生成修正Excel...'
+
+      const response = await $fetch('/api/files/generate-modified-excel', {
+        method: 'POST',
+        body: {
+          fileId: uploadedFileId.value,
+          analysisResult: analysisResult.value,
+          originalFileName: selectedFile.value.name
+        }
+      })
+
+      if (response.success) {
+        modifiedExcelInfo.value = response
+        message.success(`修正成功！共修正 ${response.modificationCount} 条数据`)
+        
+        // 自动下载
+        downloadModifiedExcel()
+      } else {
+        message.error('生成修正Excel失败')
+      }
+    } catch (error: any) {
+      console.error('生成修正Excel失败:', error)
+      
+      // 解析错误信息
+      let errorMsg = '生成失败'
+      if (error.data?.message) {
+        errorMsg = error.data.message
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+      
+      message.error(errorMsg)
+    } finally {
+      isGeneratingModified.value = false
+      currentStep.value = ''
+    }
+  }
+
+  // 下载修正后的Excel
+  const downloadModifiedExcel = () => {
+    if (!modifiedExcelInfo.value || !modifiedExcelInfo.value.downloadUrl) {
+      return
+    }
+
+    const link = document.createElement('a')
+    link.href = modifiedExcelInfo.value.downloadUrl
+    link.download = modifiedExcelInfo.value.fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    message.success('开始下载修正文件')
   }
 
   // 保存当前拆分的文件ID（用于后续获取拆分文件URL）
