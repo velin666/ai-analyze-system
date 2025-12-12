@@ -240,7 +240,10 @@
   - 进行完整流程测试，编写使用文档
   - _Requirements: 所有需求_
 
-- [ ] 4.1 准备测试数据
+- [x] 4.1 准备测试数据
+
+
+
   - 使用线上测试文件：http://47.99.61.90:5500/api/files/download/mj1b8ta94cj6fc9m1yl
   - 准备对应的AI返回Markdown表格数据（从res.md中提取）
   - 所有测试代码集中在`tests/excel-modification/`目录，方便后续删除

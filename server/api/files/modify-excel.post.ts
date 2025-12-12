@@ -27,7 +27,17 @@ interface ModifyExcelResponse {
   success: boolean
   downloadUrl?: string
   fileName?: string
+  statistics?: {
+    total_tables: number
+    processed_tables: number
+    skipped_tables: number
+    total_rows: number
+    matched_rows: number
+    skipped_rows: number
+    processing_time: number
+  }
   error?: string
+  warnings?: string[]
 }
 
 export default defineEventHandler(async (event): Promise<ModifyExcelResponse> => {
@@ -93,19 +103,28 @@ export default defineEventHandler(async (event): Promise<ModifyExcelResponse> =>
       logger.info('Excel修改成功', {
         fileName,
         outputPath: result.output_path,
-        duration: `${duration}ms`
+        duration: `${duration}ms`,
+        statistics: result.statistics
       })
       
       return {
         success: true,
         downloadUrl,
-        fileName
+        fileName,
+        statistics: result.statistics,
+        warnings: result.warnings
       }
     } else {
-      logger.error('Python脚本执行失败', { error: result.error })
+      logger.error('Python脚本执行失败', { 
+        error: result.error,
+        statistics: result.statistics,
+        warnings: result.warnings
+      })
       return {
         success: false,
-        error: result.error || '未知错误'
+        error: result.error || '未知错误',
+        statistics: result.statistics,
+        warnings: result.warnings
       }
     }
     
@@ -148,7 +167,6 @@ function executePythonScript(
     const pythonProcess = spawn('python', [
       PYTHON_SCRIPT,
       originalPath,
-      aiResult,
       outputDir
     ], {
       timeout: 30000 // 30秒超时
@@ -157,13 +175,17 @@ function executePythonScript(
     let stdout = ''
     let stderr = ''
     
+    // 通过stdin传递AI结果（避免命令行参数编码问题）
+    pythonProcess.stdin.write(aiResult, 'utf8')
+    pythonProcess.stdin.end()
+    
     pythonProcess.stdout.on('data', (data) => {
-      stdout += data.toString()
+      stdout += data.toString('utf8')
     })
     
     pythonProcess.stderr.on('data', (data) => {
-      stderr += data.toString()
-      logger.debug('Python stderr', { stderr: data.toString() })
+      stderr += data.toString('utf8')
+      logger.debug('Python stderr', { stderr: data.toString('utf8') })
     })
     
     pythonProcess.on('close', (code) => {

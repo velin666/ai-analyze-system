@@ -28,6 +28,66 @@
       </div>
     </div>
 
+    <!-- TEST_SECTION_START: Excel修改功能测试区域 -->
+    <div v-if="showTestButtons" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-yellow-800 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            测试模式 - Excel修改功能
+          </h3>
+          <button @click="showTestButtons = false" class="text-yellow-600 hover:text-yellow-800">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm text-yellow-700 mb-4">使用线上测试文件和预设的AI返回数据测试Excel修改功能</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            @click="testExcelModification('res')"
+            :disabled="isTestingExcel"
+            class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <svg v-if="!isTestingExcel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <svg v-else class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isTestingExcel ? '测试中...' : '测试 res.md (简单表格)' }}
+          </button>
+          <button
+            @click="testExcelModification('res2')"
+            :disabled="isTestingExcel"
+            class="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <svg v-if="!isTestingExcel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <svg v-else class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isTestingExcel ? '测试中...' : '测试 res2.md (复杂表格)' }}
+          </button>
+        </div>
+        <div v-if="testResult" class="mt-4 p-3 rounded-lg" :class="testResult.success ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'">
+          <p class="text-sm font-semibold" :class="testResult.success ? 'text-green-800' : 'text-red-800'">
+            {{ testResult.success ? '✓ 测试成功' : '✗ 测试失败' }}
+          </p>
+          <p class="text-sm mt-1" :class="testResult.success ? 'text-green-700' : 'text-red-700'">
+            {{ testResult.message }}
+          </p>
+          <a v-if="testResult.downloadUrl" :href="testResult.downloadUrl" :download="testResult.fileName" class="inline-block mt-2 px-3 py-1 bg-white text-blue-600 text-sm rounded hover:bg-blue-50 border border-blue-300">
+            下载测试文件
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- TEST_SECTION_END -->
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- 左侧：输入区域 -->
@@ -1168,6 +1228,12 @@
   // Excel下载相关
   const isDownloadingExcel = ref(false)
   const uploadResponse = ref<any>(null)
+  
+  // TEST_CODE_START: 测试相关变量
+  const showTestButtons = ref(true)
+  const isTestingExcel = ref(false)
+  const testResult = ref<any>(null)
+  // TEST_CODE_END
 
   // 拆分进度相关
   const splitProgress = ref({
@@ -2158,6 +2224,80 @@
       isDownloadingExcel.value = false
     }
   }
+  
+  // TEST_CODE_START: Excel修改功能测试方法
+  const testExcelModification = async (testCase: 'res' | 'res2') => {
+    isTestingExcel.value = true
+    testResult.value = null
+    
+    try {
+      // 读取测试数据
+      const testDataResponse = await $fetch(`/api/${testCase}`, {
+        method: 'GET'
+      })
+      
+      if (!testDataResponse) {
+        throw new Error('无法读取测试数据')
+      }
+      
+      const aiResult = typeof testDataResponse === 'string' ? testDataResponse : JSON.stringify(testDataResponse)
+      
+      // 使用线上测试文件
+      const testFileUrl = 'http://47.99.61.90:5500/api/files/download/mj1b8ta94cj6fc9m1yl'
+      
+      // 下载测试文件到服务器
+      message.info(`正在下载测试文件...`)
+      const downloadResponse = await $fetch('/api/files/download-and-save', {
+        method: 'POST',
+        body: {
+          url: testFileUrl,
+          filename: 'test_excel.xlsx'
+        }
+      })
+      
+      if (!downloadResponse || !downloadResponse.path) {
+        throw new Error('测试文件下载失败')
+      }
+      
+      message.info(`正在生成修改后的Excel...`)
+      
+      // 调用修改Excel的API
+      const modifyResponse = await $fetch('/api/files/modify-excel', {
+        method: 'POST',
+        body: {
+          originalFilePath: downloadResponse.path,
+          aiResult: aiResult,
+          originalFileName: 'test_excel.xlsx'
+        }
+      })
+      
+      if (modifyResponse.success && modifyResponse.downloadUrl) {
+        testResult.value = {
+          success: true,
+          message: `测试成功！使用 ${testCase}.md 的数据生成了修改后的Excel文件`,
+          downloadUrl: modifyResponse.downloadUrl,
+          fileName: modifyResponse.fileName
+        }
+        message.success('测试成功！')
+      } else {
+        testResult.value = {
+          success: false,
+          message: modifyResponse.error || '生成Excel失败'
+        }
+        message.error('测试失败')
+      }
+    } catch (error: any) {
+      console.error('测试失败:', error)
+      testResult.value = {
+        success: false,
+        message: error.message || '测试过程中发生错误'
+      }
+      message.error('测试失败: ' + error.message)
+    } finally {
+      isTestingExcel.value = false
+    }
+  }
+  // TEST_CODE_END
   
   // 下载拆分后的文件
   const downloadSplitFiles = () => {
