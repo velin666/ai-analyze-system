@@ -21,7 +21,10 @@
   - 实现Markdown表格解析、Excel读写、列匹配等核心逻辑
   - _Requirements: 2.2, 3.3, 3.4, 4.1, 4.2, 4.3, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 1.1 实现Markdown表格提取和识别函数
+- [x] 1.1 实现Markdown表格提取和识别函数
+
+
+
   - 创建`extract_all_markdown_tables()`函数，提取AI返回内容中的所有Markdown表格
   - 创建`find_target_table()`函数，从多个表格中识别目标表格（修正后的表格）
   - 识别策略：优先查找包含"修正后"关键词的表格，否则使用最后一个表格
@@ -42,7 +45,9 @@
   - 测试无效Markdown输入时返回错误而不是异常
   - 测试代码放在`tests/excel-modification/test_error_handling.py`
 
-- [ ] 1.4 实现Excel表头识别函数
+- [x] 1.4 实现Excel表头识别函数
+
+
   - 创建`find_header_row()`函数，从第1行开始扫描工作表
   - 识别包含多个非空单元格的行作为表头
   - 返回表头行号和表头字典（列索引->列名）
@@ -54,7 +59,9 @@
   - 测试各种表头位置和格式的Excel文件
   - 测试代码放在`tests/excel-modification/test_header_detection.py`
 
-- [ ] 1.6 实现列匹配函数
+- [x] 1.6 实现列匹配函数
+
+
   - 创建`match_columns()`函数，实现精确匹配和模糊匹配
   - 使用difflib.SequenceMatcher进行模糊匹配（相似度>0.8）
   - 返回列映射字典（AI列索引->原文件列索引）
@@ -78,7 +85,9 @@
   - 测试任意表头对都能生成映射表
   - 测试代码放在`tests/excel-modification/test_column_matching.py`
 
-- [ ] 1.10 实现数据写入函数
+- [x] 1.10 实现数据写入函数
+
+
   - 创建`write_modified_data()`函数，根据列映射写入数据
   - 保留表头行之前的所有内容
   - 保留未修改列的原始数据
@@ -103,7 +112,9 @@
   - 测试未修改的列数据保持不变
   - 测试代码放在`tests/excel-modification/test_data_writing.py`
 
-- [ ] 1.14 实现文件保存和命名函数
+- [x] 1.14 实现文件保存和命名函数
+
+
   - 创建文件保存逻辑，保存到`uploads/modified/`目录
   - 实现文件命名规则："原文件名(修改后).xlsx"
   - 处理文件名冲突和特殊字符
@@ -115,7 +126,9 @@
   - 测试各种原文件名生成正确的新文件名
   - 测试代码放在`tests/excel-modification/test_file_naming.py`
 
-- [ ] 1.16 实现主函数modify_excel()
+- [x] 1.16 实现主函数modify_excel()
+
+
   - 整合所有子函数，实现完整的Excel修改流程
   - 添加错误处理和日志记录
   - 返回成功/失败状态和错误信息
@@ -131,13 +144,16 @@
   - 实现Excel修改API，调用Python脚本并返回下载URL
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 2.1 创建/api/files/modify-excel.post.ts
+- [x] 2.1 创建/api/files/modify-excel.post.ts
+
+
   - 定义API接口，接收originalFilePath、aiResult、originalFileName
   - 验证输入参数（文件路径存在性、aiResult非空）
   - 构造Python脚本调用命令
   - _Requirements: 6.1_
 
-- [ ] 2.2 实现Python脚本调用逻辑
+- [x] 2.2 实现Python脚本调用逻辑
+
   - 使用child_process.spawn调用Python脚本
   - 传递参数：原文件路径、AI结果、输出路径
   - 捕获stdout和stderr输出
@@ -156,13 +172,17 @@
   - 测试无效输入时返回错误信息
   - 测试代码放在`tests/excel-modification/api.test.ts`
 
-- [ ] 2.5 实现API响应处理
+- [x] 2.5 实现API响应处理
+
   - 解析Python脚本的输出（JSON格式）
   - 成功时返回downloadUrl和fileName
   - 失败时返回error信息和适当的HTTP状态码
   - _Requirements: 6.3, 6.4_
 
-- [ ] 2.6 添加错误处理和日志记录
+- [x] 2.6 添加错误处理和日志记录
+
+
+
   - 捕获所有异常并返回用户友好的错误信息
   - 使用logger记录详细的错误信息
   - 记录文件路径、AI结果长度、错误堆栈等
@@ -178,27 +198,33 @@
   - 在document-analysis.vue中添加下载修改后Excel的按钮和逻辑
   - _Requirements: 1.4, 1.5_
 
-- [ ] 3.1 在分析结果中添加下载按钮
+- [x] 3.1 在分析结果中添加下载按钮
+
+
   - 当AI分析成功且返回Markdown表格时，显示"下载修改后的Excel"按钮
   - 按钮样式与现有UI保持一致
   - 添加loading状态和禁用逻辑
   - _Requirements: 1.4_
 
-- [ ] 3.2 实现downloadModifiedExcel()方法
+- [x] 3.2 实现downloadModifiedExcel()方法
+
   - 提取AI返回的content（Markdown表格）
   - 获取原文件的服务器路径（从uploadResponse中）
   - 调用/api/files/modify-excel接口
   - 处理loading状态和错误提示
   - _Requirements: 1.5_
 
-- [ ] 3.3 实现文件下载逻辑
+- [x] 3.3 实现文件下载逻辑
+
   - 接收API返回的downloadUrl
   - 创建隐藏的<a>标签触发下载
   - 设置download属性为修改后的文件名
   - 显示成功提示信息
   - _Requirements: 1.5, 6.5_
 
-- [ ] 3.4 添加错误处理和用户提示
+- [x] 3.4 添加错误处理和用户提示
+
+
   - 处理API调用失败的情况
   - 显示友好的错误提示（使用message组件）
   - 处理网络超时和服务器错误

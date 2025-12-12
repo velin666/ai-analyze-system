@@ -983,6 +983,45 @@
                     >
                       {{ result.result.content }}
                     </div>
+                    
+                    <!-- Excel下载按钮 -->
+                    <div v-if="isExcelFile && hasMarkdownTable(result.result.content)" class="mt-3">
+                      <button
+                        @click="downloadModifiedExcel(result)"
+                        :disabled="isDownloadingExcel"
+                        class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                      >
+                        <svg
+                          v-if="!isDownloadingExcel"
+                          class="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        <svg
+                          v-else
+                          class="w-4 h-4 mr-2 animate-spin"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        {{ isDownloadingExcel ? '生成中...' : '下载修改后的Excel' }}
+                      </button>
+                    </div>
 
                     <!-- 提取的URL -->
                     <div
@@ -1125,6 +1164,10 @@
 
   // Excel提示词
   const excelWorkRequirements = ref<string>('')
+  
+  // Excel下载相关
+  const isDownloadingExcel = ref(false)
+  const uploadResponse = ref<any>(null)
 
   // 拆分进度相关
   const splitProgress = ref({
@@ -1301,16 +1344,19 @@
         const formData = new FormData()
         formData.append('file', selectedFile.value)
 
-        const uploadResponse = await $fetch('/api/files/upload', {
+        const uploadResp = await $fetch('/api/files/upload', {
           method: 'POST',
           body: formData,
         })
 
-        if (!uploadResponse || !uploadResponse.url) {
+        if (!uploadResp || !uploadResp.url) {
           throw new Error('文件上传失败，未获取到文件URL')
         }
 
-        const fileUrl = uploadResponse.url
+        // 保存上传响应，用于后续下载修改后的Excel
+        uploadResponse.value = uploadResp
+        
+        const fileUrl = uploadResp.url
         console.log('Excel文件上传成功，URL:', fileUrl)
 
         // 重置结果数组
@@ -1534,53 +1580,6 @@
       console.error('Coze工作流分析失败:', error)
       throw error
     }
-  }
-
-  // 轮询工作流状态
-  const pollWorkflowStatus = async (executeId: string) => {
-    const maxAttempts = 60 // 最多轮询60次
-    const pollInterval = 3000 // 每3秒轮询一次
-    let attempts = 0
-
-    while (attempts < maxAttempts) {
-      attempts++
-
-      try {
-        const statusResponse = await $fetch(
-          `/api/coze/workflow-status?executeId=${executeId}`
-        )
-        const status = (statusResponse as any).status
-
-        if (status === 'succeeded') {
-          // 工作流成功完成
-          currentStep.value = '分析完成，正在生成报告...'
-          progress.value = 100
-
-          // 处理输出结果
-          const output = (statusResponse as any).output
-          analysisResult.value = processWorkflowOutput(output)
-          return
-        } else if (status === 'failed') {
-          // 工作流失败
-          const errorMsg =
-            (statusResponse as any).errorMessage || '工作流执行失败'
-          throw new Error(errorMsg)
-        } else if (status === 'running') {
-          // 工作流仍在运行，更新进度
-          currentStep.value = `正在分析文档... (${attempts}/${maxAttempts})`
-          progress.value = 60 + (attempts / maxAttempts) * 30
-
-          // 等待后继续轮询
-          await new Promise(resolve => setTimeout(resolve, pollInterval))
-        }
-      } catch (error) {
-        console.error('查询工作流状态失败:', error)
-        throw error
-      }
-    }
-
-    // 超时
-    throw new Error('工作流执行超时，请稍后重试')
   }
 
   // 处理工作流输出
@@ -2112,6 +2111,54 @@
     }
   }
 
+  // 检查内容是否包含Markdown表格
+  const hasMarkdownTable = (content: string): boolean => {
+    if (!content) return false
+    // 检查是否包含Markdown表格的特征（至少有表头分隔符）
+    return /\|.*\|/.test(content) && /[-:]+\|/.test(content)
+  }
+  
+  // 下载修改后的Excel
+  const downloadModifiedExcel = async (result: any) => {
+    if (!uploadResponse.value || !result.result?.content) {
+      message.error('缺少必要的文件信息')
+      return
+    }
+    
+    isDownloadingExcel.value = true
+    
+    try {
+      // 调用修改Excel的API
+      const response = await $fetch('/api/files/modify-excel', {
+        method: 'POST',
+        body: {
+          originalFilePath: uploadResponse.value.path,
+          aiResult: result.result.content,
+          originalFileName: uploadResponse.value.originalName || selectedFile.value?.name || 'file.xlsx'
+        }
+      })
+      
+      if (response.success && response.downloadUrl) {
+        // 触发下载
+        const link = document.createElement('a')
+        link.href = response.downloadUrl
+        link.download = response.fileName || 'modified.xlsx'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        message.success('Excel文件已生成，开始下载')
+      } else {
+        message.error(response.error || '生成Excel失败')
+      }
+    } catch (error: any) {
+      console.error('下载修改后Excel失败:', error)
+      message.error(error.message || '下载失败，请重试')
+    } finally {
+      isDownloadingExcel.value = false
+    }
+  }
+  
   // 下载拆分后的文件
   const downloadSplitFiles = () => {
     if (!splitResult.value || !splitResult.value.downloadUrl) return

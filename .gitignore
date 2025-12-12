@@ -115,9 +115,7 @@ uploads/
 !uploads/.gitkeep
 
 # PM2 logs (only ignore log files, not the API directory)
-logs/*.log
-logs/*.log.*
-!logs/.gitkeep
+logs/*
 # Allow server/api/logs/ directory
 !server/api/logs/
 
