@@ -1349,7 +1349,9 @@
     if (!content) return []
     const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g
     const matches = content.match(urlRegex)
-    return matches || []
+    return (matches || []).map(v =>
+      v.replaceAll(/([、)）\#]|[\u4e00-\u9fa5])/g, '')
+    )
   }
 
   // 获取所有报告URL
