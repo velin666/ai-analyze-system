@@ -614,82 +614,41 @@ class ExcelSequenceProcessor:
             )
             
             # 5. 处理每个表格
-            # 优化：如果有多个包含序号列的表格，优先使用最大的（最完整的）
+            # 按顺序处理所有包含序号列的表格，后面的表格会覆盖前面的相同序号行
             logger.info("-" * 80)
             
-            # 找出所有包含序号列的表格及其大小
-            tables_with_sequence = [(idx, table, len(table.rows)) 
-                                   for idx, table in enumerate(tables) 
-                                   if table.has_sequence]
+            # 统计包含序号列的表格数量
+            tables_with_sequence_count = sum(1 for t in tables if t.has_sequence)
             
-            if len(tables_with_sequence) > 1:
-                # 按行数排序，找出最大的表格
-                tables_with_sequence.sort(key=lambda x: x[2], reverse=True)
-                largest_table_idx = tables_with_sequence[0][0]
-                largest_table_rows = tables_with_sequence[0][2]
+            if tables_with_sequence_count > 1:
+                logger.info(f"检测到{tables_with_sequence_count}个包含序号列的表格")
+                logger.info(f"将按顺序处理所有表格，后续表格会覆盖相同序号的行")
+            
+            # 按顺序处理所有表格
+            for table_idx, table in enumerate(tables, 1):
+                logger.info(f"[表格 {table_idx}/{len(tables)}] 开始处理...")
                 
-                logger.info(f"检测到{len(tables_with_sequence)}个包含序号列的表格")
-                logger.info(f"将优先处理最大的表格（表格{largest_table_idx + 1}，{largest_table_rows}行）以避免数据覆盖")
-                
-                # 只处理最大的表格
-                for table_idx, table in enumerate(tables, 1):
-                    if table_idx - 1 == largest_table_idx:
-                        logger.info(f"[表格 {table_idx}/{len(tables)}] 开始处理（最完整的表格）...")
-                        
-                        try:
-                            result = self.process_single_table(
-                                table,
-                                sequence_matcher,
-                                seq_col_info.column_headers
-                            )
-                            
-                            if result:
-                                self.statistics.processed_tables += 1
-                                logger.info(f"[表格 {table_idx}/{len(tables)}] ✓ 处理完成")
-                            else:
-                                self.statistics.skipped_tables += 1
-                                logger.warning(f"[表格 {table_idx}/{len(tables)}] ⚠ 跳过该表格（不包含序号列）")
-                                warnings.append(f"表格{table_idx}不包含序号列，已跳过")
-                                
-                        except Exception as e:
-                            logger.error(f"[表格 {table_idx}/{len(tables)}] ✗ 处理失败: {str(e)}")
-                            self.statistics.skipped_tables += 1
-                            warnings.append(f"表格{table_idx}处理失败: {str(e)}")
-                    elif table.has_sequence:
-                        logger.info(f"[表格 {table_idx}/{len(tables)}] 跳过（使用更完整的表格{largest_table_idx + 1}代替）")
-                        self.statistics.skipped_tables += 1
-                        warnings.append(f"表格{table_idx}被跳过（使用更完整的表格代替）")
+                try:
+                    result = self.process_single_table(
+                        table,
+                        sequence_matcher,
+                        seq_col_info.column_headers
+                    )
+                    
+                    if result:
+                        self.statistics.processed_tables += 1
+                        logger.info(f"[表格 {table_idx}/{len(tables)}] ✓ 处理完成")
                     else:
-                        logger.info(f"[表格 {table_idx}/{len(tables)}] 跳过（不包含序号列）")
                         self.statistics.skipped_tables += 1
-                    
-                    logger.info("-" * 80)
-            else:
-                # 只有一个或没有包含序号列的表格，正常处理所有表格
-                for table_idx, table in enumerate(tables, 1):
-                    logger.info(f"[表格 {table_idx}/{len(tables)}] 开始处理...")
-                    
-                    try:
-                        result = self.process_single_table(
-                            table,
-                            sequence_matcher,
-                            seq_col_info.column_headers
-                        )
+                        logger.warning(f"[表格 {table_idx}/{len(tables)}] ⚠ 跳过该表格（不包含序号列）")
+                        warnings.append(f"表格{table_idx}不包含序号列，已跳过")
                         
-                        if result:
-                            self.statistics.processed_tables += 1
-                            logger.info(f"[表格 {table_idx}/{len(tables)}] ✓ 处理完成")
-                        else:
-                            self.statistics.skipped_tables += 1
-                            logger.warning(f"[表格 {table_idx}/{len(tables)}] ⚠ 跳过该表格（不包含序号列）")
-                            warnings.append(f"表格{table_idx}不包含序号列，已跳过")
-                            
-                    except Exception as e:
-                        logger.error(f"[表格 {table_idx}/{len(tables)}] ✗ 处理失败: {str(e)}")
-                        self.statistics.skipped_tables += 1
-                        warnings.append(f"表格{table_idx}处理失败: {str(e)}")
-                    
-                    logger.info("-" * 80)
+                except Exception as e:
+                    logger.error(f"[表格 {table_idx}/{len(tables)}] ✗ 处理失败: {str(e)}")
+                    self.statistics.skipped_tables += 1
+                    warnings.append(f"表格{table_idx}处理失败: {str(e)}")
+                
+                logger.info("-" * 80)
             
             # 6. 保存文件
             if self.statistics.matched_rows == 0:

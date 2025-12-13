@@ -4,7 +4,7 @@ import { join } from 'path'
 
 export default defineEventHandler(async () => {
   try {
-    const filePath = join(process.cwd(), 'server', 'api', 'res.md')
+    const filePath = join(process.cwd(), 'server', 'api', 'res3.md')
     const content = await fs.readFile(filePath, 'utf-8')
     return content
   } catch (error: any) {
