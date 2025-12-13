@@ -1448,7 +1448,7 @@ const extractUrls = (content: string): string[] => {
   const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g;
   const matches = content.match(urlRegex);
   return (matches || []).map((v) =>
-    v.replace(/(?<=\)）).+/, "").replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, ""),
+    v.replace(/(?<=[)）]).+/, "").replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, ""),
   );
 };
 
