@@ -201,6 +201,9 @@ class TableExtractor:
             headers = [cell.strip() for cell in header_line.split('|')]
             headers = [h for h in headers if h]  # 移除空字符串
             
+            # 标准化表头：去除所有空格（包括中间的空格），与Excel列名匹配逻辑保持一致
+            headers = [h.replace(' ', '').replace('\u3000', '') for h in headers]
+            
             if not headers:
                 return None
             
@@ -463,6 +466,49 @@ class DataReplacer:
     负责将AI数据行的内容精确替换到Excel文件的目标行。
     """
     
+    # 列名映射规则：AI列名 -> Excel列名
+    COLUMN_NAME_MAPPING = {
+        '备注说明': '备注',
+        '备注': '备注',
+        '名称': '名称',
+        '品牌': '品牌',
+        '型号尺寸': '型号尺寸',
+        '数量': '数量',
+        '单位': '单位',
+        'ERP识别码': 'ERP识别码',
+        '序号': '序号'
+    }
+    
+    @staticmethod
+    def normalize_column_name(col_name: str, column_mapping: Dict[str, int]) -> Optional[str]:
+        """
+        标准化列名，尝试映射到Excel中的实际列名
+        
+        Args:
+            col_name: AI表格中的列名
+            column_mapping: Excel列名到列索引的映射
+            
+        Returns:
+            映射后的Excel列名，如果无法映射返回None
+        """
+        # 1. 直接匹配
+        if col_name in column_mapping:
+            return col_name
+        
+        # 2. 使用映射规则
+        if col_name in DataReplacer.COLUMN_NAME_MAPPING:
+            mapped_name = DataReplacer.COLUMN_NAME_MAPPING[col_name]
+            if mapped_name in column_mapping:
+                return mapped_name
+        
+        # 3. 模糊匹配：检查是否包含关键词
+        for excel_col in column_mapping.keys():
+            if excel_col in col_name or col_name in excel_col:
+                logger.debug(f"    模糊匹配: '{col_name}' -> '{excel_col}'")
+                return excel_col
+        
+        return None
+    
     @staticmethod
     def replace_row(worksheet,
                    row_number: int,
@@ -484,9 +530,11 @@ class DataReplacer:
             replaced_count = 0
             
             for col_name, col_value in ai_row_data.items():
-                # 检查该列是否在Excel中存在
-                if col_name in column_mapping:
-                    excel_col_idx = column_mapping[col_name]
+                # 标准化列名，尝试映射到Excel列名
+                excel_col_name = DataReplacer.normalize_column_name(col_name, column_mapping)
+                
+                if excel_col_name:
+                    excel_col_idx = column_mapping[excel_col_name]
                     cell = worksheet.cell(row_number, excel_col_idx)
                     
                     # 处理空值
