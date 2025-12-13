@@ -2243,29 +2243,29 @@
       const aiResult = typeof testDataResponse === 'string' ? testDataResponse : JSON.stringify(testDataResponse)
       
       // 使用线上测试文件
-      const testFileUrl = 'http://47.99.61.90:5500/api/files/download/mj1b8ta94cj6fc9m1yl'
+      // const testFileUrl = 'http://47.99.61.90:5500/api/files/download/mj1b8ta94cj6fc9m1yl'
       
-      // 下载测试文件到服务器
-      message.info(`正在下载测试文件...`)
-      const downloadResponse = await $fetch('/api/files/download-and-save', {
+      // // 下载测试文件到服务器
+      // message.info(`正在下载测试文件...`)
+      // const downloadResponse = await $fetch('/api/files/download-and-save', {
+      //   method: 'POST',
+      //   body: {
+      //     url: testFileUrl,
+      //     filename: 'test_excel.xlsx'
+      //   }
+      // })
+      
+      // if (!downloadResponse || !downloadResponse.path) {
+      //   throw new Error('测试文件下载失败')
+      // }
+      
+      // message.info(`正在生成修改后的Excel...`)
+      
+      // 调用修改Excel的API（使用基于序号列的匹配）
+      const modifyResponse = await $fetch('/api/files/modify-excel-by-sequence', {
         method: 'POST',
         body: {
-          url: testFileUrl,
-          filename: 'test_excel.xlsx'
-        }
-      })
-      
-      if (!downloadResponse || !downloadResponse.path) {
-        throw new Error('测试文件下载失败')
-      }
-      
-      message.info(`正在生成修改后的Excel...`)
-      
-      // 调用修改Excel的API
-      const modifyResponse = await $fetch('/api/files/modify-excel', {
-        method: 'POST',
-        body: {
-          originalFilePath: downloadResponse.path,
+          originalFilePath: 'assets/KHG51-SD01 烘烤炉电气件清单.xlsx',
           aiResult: aiResult,
           originalFileName: 'test_excel.xlsx'
         }

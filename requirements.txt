@@ -4,3 +4,9 @@ pywin32>=306
 
 # 优先级2: python-docx (备选方案，无需Word)
 python-docx>=1.1.0
+
+# Excel processing
+openpyxl>=3.1.0
+
+# Property-based testing
+hypothesis>=6.0.0

@@ -963,7 +963,7 @@ class ExcelProcessor:
             logger.info(f"准备处理 {len(tables_text)} 个表格")
             
             # 2. 加载Excel文件
-            if not os.path.exists(self.excel_path): not os.path.exists(self.excel_path):
+            if not os.path.exists(self.excel_path):
                 logger.error(f"✗ 原始文件不存在: {self.excel_path}")
                 return ProcessingResult(
                     success=False,
