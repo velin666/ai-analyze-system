@@ -537,6 +537,11 @@ class DataReplacer:
                     excel_col_idx = column_mapping[excel_col_name]
                     cell = worksheet.cell(row_number, excel_col_idx)
                     
+                    # 检查是否是合并单元格
+                    if DataReplacer.is_merged_cell(worksheet, row_number, excel_col_idx):
+                        logger.debug(f"    列'{col_name}': 跳过合并单元格 (行{row_number}, 列{excel_col_idx})")
+                        continue
+                    
                     # 处理空值
                     if col_value is None or col_value == '':
                         new_value = ''
@@ -544,11 +549,17 @@ class DataReplacer:
                         new_value = str(col_value).strip()
                     
                     old_value = cell.value
-                    cell.value = new_value
-                    replaced_count += 1
                     
-                    if old_value != new_value:
-                        logger.debug(f"    列'{col_name}': '{old_value}' -> '{new_value}'")
+                    try:
+                        cell.value = new_value
+                        replaced_count += 1
+                        
+                        if old_value != new_value:
+                            logger.debug(f"    列'{col_name}': '{old_value}' -> '{new_value}'")
+                    except AttributeError as e:
+                        # 处理MergedCell错误
+                        logger.debug(f"    列'{col_name}': 跳过合并单元格 (AttributeError)")
+                        continue
             
             logger.debug(f"  ✓ 成功替换第{row_number}行的{replaced_count}个单元格")
             return replaced_count
@@ -556,6 +567,23 @@ class DataReplacer:
         except Exception as e:
             logger.error(f"✗ 替换第{row_number}行数据时出错: {str(e)}", exc_info=True)
             return 0
+    
+    @staticmethod
+    def is_merged_cell(worksheet, row: int, col: int) -> bool:
+        """
+        检查单元格是否是合并单元格
+        
+        Args:
+            worksheet: openpyxl工作表对象
+            row: 行号（1-based）
+            col: 列号（1-based）
+            
+        Returns:
+            是否是合并单元格
+        """
+        from openpyxl.cell.cell import MergedCell
+        cell = worksheet.cell(row, col)
+        return isinstance(cell, MergedCell)
 
 
 # 文件未完成，继续在下一部分...
