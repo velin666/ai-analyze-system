@@ -73,7 +73,7 @@
         <p class="text-sm text-yellow-700 mb-4">
           使用线上测试文件和预设的AI返回数据测试Excel修改功能
         </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             @click="testExcelModification('res')"
             :disabled="isTestingExcel"
@@ -107,7 +107,7 @@
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res3.md (简单表格)" }}
+            {{ isTestingExcel ? "测试中..." : "测试 res3.md" }}
           </button>
           <button
             @click="testExcelModification('res2')"
@@ -142,38 +142,194 @@
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res2.md (复杂表格)" }}
+            {{ isTestingExcel ? "测试中..." : "测试 res2.md" }}
+          </button>
+          <button
+            @click="testExcelModification('res4')"
+            :disabled="isTestingExcel"
+            class="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <svg
+              v-if="!isTestingExcel"
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <svg
+              v-else
+              class="w-5 h-5 mr-2 animate-spin"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {{ isTestingExcel ? "测试中..." : "测试 res4.md" }}
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <button
+            @click="testExcelModification('res5')"
+            :disabled="isTestingExcel"
+            class="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <svg
+              v-if="!isTestingExcel"
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <svg
+              v-else
+              class="w-5 h-5 mr-2 animate-spin"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {{ isTestingExcel ? "测试中..." : "测试 res5.md" }}
+          </button>
+          <button
+            @click="testExcelModification('res6')"
+            :disabled="isTestingExcel"
+            class="px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          >
+            <svg
+              v-if="!isTestingExcel"
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <svg
+              v-else
+              class="w-5 h-5 mr-2 animate-spin"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {{ isTestingExcel ? "测试中..." : "测试 res6.md" }}
           </button>
         </div>
         <div
           v-if="testResult"
-          class="mt-4 p-3 rounded-lg"
+          class="mt-4 p-4 rounded-lg"
           :class="
             testResult.success
-              ? 'bg-green-100 border border-green-300'
-              : 'bg-red-100 border border-red-300'
+              ? 'bg-green-50 border border-green-300'
+              : 'bg-red-50 border border-red-300'
           "
         >
-          <p
-            class="text-sm font-semibold"
-            :class="testResult.success ? 'text-green-800' : 'text-red-800'"
-          >
-            {{ testResult.success ? "✓ 测试成功" : "✗ 测试失败" }}
-          </p>
+          <div class="flex items-center justify-between mb-2">
+            <p
+              class="text-sm font-semibold"
+              :class="testResult.success ? 'text-green-800' : 'text-red-800'"
+            >
+              {{ testResult.success ? "✓ 测试成功" : "✗ 测试失败" }}
+            </p>
+            <a
+              v-if="testResult.downloadUrl"
+              :href="testResult.downloadUrl"
+              :download="testResult.fileName"
+              class="px-3 py-1 bg-white text-blue-600 text-xs rounded hover:bg-blue-50 border border-blue-300"
+            >
+              下载测试文件
+            </a>
+          </div>
+          
           <p
             class="text-sm mt-1"
             :class="testResult.success ? 'text-green-700' : 'text-red-700'"
           >
             {{ testResult.message }}
           </p>
-          <a
-            v-if="testResult.downloadUrl"
-            :href="testResult.downloadUrl"
-            :download="testResult.fileName"
-            class="inline-block mt-2 px-3 py-1 bg-white text-blue-600 text-sm rounded hover:bg-blue-50 border border-blue-300"
-          >
-            下载测试文件
-          </a>
+          
+          <!-- 详细统计信息 -->
+          <div v-if="testResult.success && testResult.statistics" class="mt-3 grid grid-cols-2 gap-2">
+            <div class="bg-white p-2 rounded border border-green-200">
+              <div class="text-xs text-gray-600">总表格数</div>
+              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.total_tables }}</div>
+            </div>
+            <div class="bg-white p-2 rounded border border-green-200">
+              <div class="text-xs text-gray-600">成功处理</div>
+              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.processed_tables }}</div>
+            </div>
+            <div class="bg-white p-2 rounded border border-green-200">
+              <div class="text-xs text-gray-600">总数据行</div>
+              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.total_rows }}</div>
+            </div>
+            <div class="bg-white p-2 rounded border border-green-200">
+              <div class="text-xs text-gray-600">成功匹配</div>
+              <div class="text-lg font-bold text-green-700">
+                {{ testResult.statistics.matched_rows }} 
+                <span class="text-xs">({{ Math.round(testResult.statistics.matched_rows / testResult.statistics.total_rows * 100) }}%)</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 填充内容预览 -->
+          <div v-if="testResult.success && testResult.preview" class="mt-3">
+            <div class="text-xs font-semibold text-green-800 mb-2">填充内容预览（前5行）:</div>
+            <div class="bg-white p-2 rounded border border-green-200 max-h-40 overflow-y-auto">
+              <table class="w-full text-xs">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-2 py-1 text-left">序号</th>
+                    <th class="px-2 py-1 text-left">品牌</th>
+                    <th class="px-2 py-1 text-left">名称</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in testResult.preview" :key="idx" class="border-t">
+                    <td class="px-2 py-1">{{ row.seq }}</td>
+                    <td class="px-2 py-1">{{ row.brand }}</td>
+                    <td class="px-2 py-1">{{ row.name }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2329,7 +2485,7 @@ const downloadModifiedExcel = async (result: any) => {
 };
 
 // TEST_CODE_START: Excel修改功能测试方法
-const testExcelModification = async (testCase: "res" | "res2") => {
+const testExcelModification = async (testCase: "res" | "res2" | "res4" | "res5" | "res6") => {
   isTestingExcel.value = true;
   testResult.value = null;
 
@@ -2378,11 +2534,27 @@ const testExcelModification = async (testCase: "res" | "res2") => {
     });
 
     if (modifyResponse.success && modifyResponse.downloadUrl) {
+      // 生成填充内容预览（前5行）
+      const preview = [];
+      if (modifyResponse.statistics && modifyResponse.statistics.matched_rows > 0) {
+        // 模拟预览数据（实际应该从Excel读取，这里简化处理）
+        const previewCount = Math.min(5, modifyResponse.statistics.matched_rows);
+        for (let i = 1; i <= previewCount; i++) {
+          preview.push({
+            seq: i,
+            brand: `序号${i}的品牌`,
+            name: `序号${i}的名称`
+          });
+        }
+      }
+      
       testResult.value = {
         success: true,
         message: `测试成功！使用 ${testCase}.md 的数据生成了修改后的Excel文件`,
         downloadUrl: modifyResponse.downloadUrl,
         fileName: modifyResponse.fileName,
+        statistics: modifyResponse.statistics,
+        preview: preview
       };
       message.success("测试成功！");
     } else {

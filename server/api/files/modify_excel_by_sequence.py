@@ -231,9 +231,21 @@ class TableExtractor:
                     cells = cells[:-1]
                 
                 # 检查是否包含省略号（...）
-                if any('...' in str(cell) for cell in cells):
-                    has_ellipsis = True
-                    logger.debug(f"  检测到省略号行，标记为示例表格")
+                # 但排除URL中的省略号（如 https://...）
+                for cell in cells:
+                    cell_str = str(cell)
+                    # 如果单元格只包含"..."或"…"，或者以"..."开头/结尾（不是URL），则认为是示例
+                    if cell_str.strip() in ['...', '…', '......']:
+                        has_ellipsis = True
+                        logger.debug(f"  检测到省略号行，标记为示例表格")
+                        break
+                    # 检查是否是非URL的省略号（不包含http、https、item.taobao等）
+                    if '...' in cell_str and not any(url_part in cell_str.lower() for url_part in ['http://', 'https://', 'item.taobao', 'www.']):
+                        has_ellipsis = True
+                        logger.debug(f"  检测到省略号行（非URL），标记为示例表格")
+                        break
+                
+                if has_ellipsis:
                     continue  # 跳过包含省略号的行
                 
                 # 过滤完全空的行

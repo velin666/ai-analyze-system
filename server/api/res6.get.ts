@@ -1,4 +1,4 @@
-// TEST_FILE: 测试用API - 读取res2.md内容
+// TEST_FILE: 测试用API - 读取res6.md内容
 import { promises as fs } from 'fs'
 import { join } from 'path'
 
@@ -10,7 +10,7 @@ export default defineEventHandler(async () => {
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: `读取res2.md失败: ${error.message}`
+      statusMessage: `读取res6.md失败: ${error.message}`
     })
   }
 })
