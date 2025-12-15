@@ -277,41 +277,62 @@
               下载测试文件
             </a>
           </div>
-          
+
           <p
             class="text-sm mt-1"
             :class="testResult.success ? 'text-green-700' : 'text-red-700'"
           >
             {{ testResult.message }}
           </p>
-          
+
           <!-- 详细统计信息 -->
-          <div v-if="testResult.success && testResult.statistics" class="mt-3 grid grid-cols-2 gap-2">
+          <div
+            v-if="testResult.success && testResult.statistics"
+            class="mt-3 grid grid-cols-2 gap-2"
+          >
             <div class="bg-white p-2 rounded border border-green-200">
               <div class="text-xs text-gray-600">总表格数</div>
-              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.total_tables }}</div>
+              <div class="text-lg font-bold text-green-700">
+                {{ testResult.statistics.total_tables }}
+              </div>
             </div>
             <div class="bg-white p-2 rounded border border-green-200">
               <div class="text-xs text-gray-600">成功处理</div>
-              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.processed_tables }}</div>
+              <div class="text-lg font-bold text-green-700">
+                {{ testResult.statistics.processed_tables }}
+              </div>
             </div>
             <div class="bg-white p-2 rounded border border-green-200">
               <div class="text-xs text-gray-600">总数据行</div>
-              <div class="text-lg font-bold text-green-700">{{ testResult.statistics.total_rows }}</div>
+              <div class="text-lg font-bold text-green-700">
+                {{ testResult.statistics.total_rows }}
+              </div>
             </div>
             <div class="bg-white p-2 rounded border border-green-200">
               <div class="text-xs text-gray-600">成功匹配</div>
               <div class="text-lg font-bold text-green-700">
-                {{ testResult.statistics.matched_rows }} 
-                <span class="text-xs">({{ Math.round(testResult.statistics.matched_rows / testResult.statistics.total_rows * 100) }}%)</span>
+                {{ testResult.statistics.matched_rows }}
+                <span class="text-xs"
+                  >({{
+                    Math.round(
+                      (testResult.statistics.matched_rows /
+                        testResult.statistics.total_rows) *
+                        100
+                    )
+                  }}%)</span
+                >
               </div>
             </div>
           </div>
-          
+
           <!-- 填充内容预览 -->
           <div v-if="testResult.success && testResult.preview" class="mt-3">
-            <div class="text-xs font-semibold text-green-800 mb-2">填充内容预览（前5行）:</div>
-            <div class="bg-white p-2 rounded border border-green-200 max-h-40 overflow-y-auto">
+            <div class="text-xs font-semibold text-green-800 mb-2">
+              填充内容预览（前5行）:
+            </div>
+            <div
+              class="bg-white p-2 rounded border border-green-200 max-h-40 overflow-y-auto"
+            >
               <table class="w-full text-xs">
                 <thead class="bg-gray-50">
                   <tr>
@@ -321,7 +342,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, idx) in testResult.preview" :key="idx" class="border-t">
+                  <tr
+                    v-for="(row, idx) in testResult.preview"
+                    :key="idx"
+                    class="border-t"
+                  >
                     <td class="px-2 py-1">{{ row.seq }}</td>
                     <td class="px-2 py-1">{{ row.brand }}</td>
                     <td class="px-2 py-1">{{ row.name }}</td>
@@ -852,7 +877,10 @@
           </div>
 
           <!-- 文本输入区域 -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div
+            v-if="!selectedFile"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
             <h2
               class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
             >
@@ -1348,7 +1376,7 @@
                       <div class="space-y-1">
                         <div
                           v-for="(url, idx) in extractUrls(
-                            result.result.content,
+                            result.result.content
                           )"
                           :key="idx"
                           class="flex items-center justify-between bg-blue-50 p-2 rounded"
@@ -1360,7 +1388,7 @@
                             @click="
                               exportSingleReport(
                                 url,
-                                `report_${result.fileIndex}_${idx + 1}.docx`,
+                                `report_${result.fileIndex}_${idx + 1}.docx`
                               )
                             "
                             class="ml-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
@@ -1582,7 +1610,7 @@ const formatTime = (date: Date) => {
 // Toast提示函数
 const showToast = (
   content: string,
-  type: "success" | "error" | "warning" = "error",
+  type: "success" | "error" | "warning" = "error"
 ) => {
   message[type](content);
 };
@@ -1604,7 +1632,9 @@ const extractUrls = (content: string): string[] => {
   const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g;
   const matches = content.match(urlRegex);
   return (matches || []).map((v) =>
-    v.replace(/(?<=[)）]).+/, "").replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, ""),
+    v
+      .replace(/(?<=[)）、]).+/, "")
+      .replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, "")
   );
 };
 
@@ -1780,7 +1810,7 @@ const analyzeWithCozeWorkflow = async () => {
         console.error("获取拆分文件URL失败:", error);
         showToast(
           `获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`,
-          "error",
+          "error"
         );
         return;
       }
@@ -1833,7 +1863,7 @@ const analyzeWithCozeWorkflow = async () => {
         if (workflowResponse.error && workflowResponse.error_message) {
           showToast(
             `第 ${i + 1} 个文件分析失败: ${workflowResponse.error_message}`,
-            "error",
+            "error"
           );
           console.error(`第 ${i + 1} 个文件错误:`, workflowResponse);
 
@@ -1867,7 +1897,7 @@ const analyzeWithCozeWorkflow = async () => {
         console.error(`第 ${i + 1} 个文件分析失败:`, error);
         showToast(
           `第 ${i + 1} 个文件分析失败: ${error.message || "网络错误"}`,
-          "error",
+          "error"
         );
 
         analysisResults.value.push({
@@ -1895,7 +1925,7 @@ const analyzeWithCozeWorkflow = async () => {
     if (successResults.length < totalFiles) {
       showToast(
         `部分文件分析失败，成功: ${successResults.length}/${totalFiles}`,
-        "warning",
+        "warning"
       );
     }
   } catch (error: any) {
@@ -2049,25 +2079,25 @@ const mergeAnalysisResults = (results: any[]) => {
       ...(processed.missingFields || []).map((item: any) => ({
         ...item,
         fileIndex: index + 1,
-      })),
+      }))
     );
     merged.textErrors.push(
       ...(processed.textErrors || []).map((item: any) => ({
         ...item,
         fileIndex: index + 1,
-      })),
+      }))
     );
     merged.formatIssues.push(
       ...(processed.formatIssues || []).map((item: any) => ({
         ...item,
         fileIndex: index + 1,
-      })),
+      }))
     );
     merged.missingImages.push(
       ...(processed.missingImages || []).map((item: any) => ({
         ...item,
         fileIndex: index + 1,
-      })),
+      }))
     );
 
     totalScore += processed.score || 0;
@@ -2291,7 +2321,7 @@ const handleRealTimeProgress = (fileId: string, originalName: string) => {
     const eventSource = new EventSource(
       `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${
         pagesPerFile.value
-      }&originalName=${encodeURIComponent(originalName)}`,
+      }&originalName=${encodeURIComponent(originalName)}`
     );
 
     eventSource.onmessage = (event) => {
@@ -2344,7 +2374,7 @@ const handleProgressMessage = (
   data: any,
   resolve: Function,
   reject: Function,
-  eventSource: EventSource,
+  eventSource: EventSource
 ) => {
   switch (data.type) {
     case "progress":
@@ -2399,11 +2429,11 @@ const handleProgressUpdate = (progressData: any) => {
     case "file_complete":
       splitProgress.value.completed = progressData.completed;
       splitProgress.value.percentage = Math.round(
-        (progressData.completed / progressData.total) * 100,
+        (progressData.completed / progressData.total) * 100
       );
       currentFileProgress.value.percentage = 100;
       progressLogs.value.push(
-        `完成第 ${progressData.completed} 个文件 (共 ${progressData.total} 个)`,
+        `完成第 ${progressData.completed} 个文件 (共 ${progressData.total} 个)`
       );
       break;
     case "all_complete":
@@ -2426,7 +2456,7 @@ const handleProgressUpdate = (progressData: any) => {
         progressData.current === progressData.total
       ) {
         progressLogs.value.push(
-          `正在打包: ${progressData.current}/${progressData.total} 个文件`,
+          `正在打包: ${progressData.current}/${progressData.total} 个文件`
         );
       }
       break;
@@ -2485,7 +2515,9 @@ const downloadModifiedExcel = async (result: any) => {
 };
 
 // TEST_CODE_START: Excel修改功能测试方法
-const testExcelModification = async (testCase: "res" | "res2" | "res4" | "res5" | "res6") => {
+const testExcelModification = async (
+  testCase: "res" | "res2" | "res4" | "res5" | "res6"
+) => {
   isTestingExcel.value = true;
   testResult.value = null;
 
@@ -2536,25 +2568,31 @@ const testExcelModification = async (testCase: "res" | "res2" | "res4" | "res5" 
     if (modifyResponse.success && modifyResponse.downloadUrl) {
       // 生成填充内容预览（前5行）
       const preview = [];
-      if (modifyResponse.statistics && modifyResponse.statistics.matched_rows > 0) {
+      if (
+        modifyResponse.statistics &&
+        modifyResponse.statistics.matched_rows > 0
+      ) {
         // 模拟预览数据（实际应该从Excel读取，这里简化处理）
-        const previewCount = Math.min(5, modifyResponse.statistics.matched_rows);
+        const previewCount = Math.min(
+          5,
+          modifyResponse.statistics.matched_rows
+        );
         for (let i = 1; i <= previewCount; i++) {
           preview.push({
             seq: i,
             brand: `序号${i}的品牌`,
-            name: `序号${i}的名称`
+            name: `序号${i}的名称`,
           });
         }
       }
-      
+
       testResult.value = {
         success: true,
         message: `测试成功！使用 ${testCase}.md 的数据生成了修改后的Excel文件`,
         downloadUrl: modifyResponse.downloadUrl,
         fileName: modifyResponse.fileName,
         statistics: modifyResponse.statistics,
-        preview: preview
+        preview: preview,
       };
       message.success("测试成功！");
     } else {
