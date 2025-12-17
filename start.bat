@@ -13,7 +13,7 @@ if %errorlevel% neq 0 (
 REM 检查是否存在 node_modules
 if not exist "node_modules" (
     echo 正在安装依赖...
-    npm install
+    pnpm install
     if %errorlevel% neq 0 (
         echo 错误: 依赖安装失败
         pause
