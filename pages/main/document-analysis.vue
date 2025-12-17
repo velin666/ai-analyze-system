@@ -74,14 +74,11 @@
           使用线上测试文件和预设的AI返回数据测试Excel修改功能
         </p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button
-            @click="testExcelModification('res')"
-            :disabled="isTestingExcel"
-            class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          <h2
+            class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
           >
             <svg
-              v-if="!isTestingExcel"
-              class="w-5 h-5 mr-2"
+              class="w-5 h-5 mr-2 text-green-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -90,167 +87,65 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            <svg
-              v-else
-              class="w-5 h-5 mr-2 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res3.md" }}
-          </button>
-          <button
-            @click="testExcelModification('res2')"
-            :disabled="isTestingExcel"
-            class="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            输出结果文本直接输入
+          </h2>
+
+          <textarea
+            v-model="testContent"
+            class="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            placeholder="您可以直接在此处输入或粘贴文档内容进行分析..."
+          ></textarea>
+
+          <div
+            class="flex items-center justify-between mt-4 text-sm text-gray-500"
           >
-            <svg
-              v-if="!isTestingExcel"
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <span>{{ testContent.length }} 字符</span>
+            <button
+              @click="testContent = ''"
+              class="text-blue-600 hover:text-blue-700"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-5 h-5 mr-2 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              清空内容
+            </button>
+
+            <button
+              @click="testExcelModification()"
+              :disabled="isTestingExcel"
+              class="px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res2.md" }}
-          </button>
-          <button
-            @click="testExcelModification('res4')"
-            :disabled="isTestingExcel"
-            class="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-          >
-            <svg
-              v-if="!isTestingExcel"
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-5 h-5 mr-2 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res4.md" }}
-          </button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-          <button
-            @click="testExcelModification('res5')"
-            :disabled="isTestingExcel"
-            class="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-          >
-            <svg
-              v-if="!isTestingExcel"
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-5 h-5 mr-2 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res5.md" }}
-          </button>
-          <button
-            @click="testExcelModification('res6')"
-            :disabled="isTestingExcel"
-            class="px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-          >
-            <svg
-              v-if="!isTestingExcel"
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-5 h-5 mr-2 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ isTestingExcel ? "测试中..." : "测试 res6.md" }}
-          </button>
+              <svg
+                v-if="!isTestingExcel"
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <svg
+                v-else
+                class="w-5 h-5 mr-2 animate-spin"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              {{ isTestingExcel ? "测试中..." : "执行测试" }}
+            </button>
+          </div>
         </div>
         <div
           v-if="testResult"
@@ -2153,44 +2048,6 @@ const readFileContent = async (file: File): Promise<string> => {
   });
 };
 
-const showMockResult = () => {
-  // 模拟分析结果
-  analysisResult.value = {
-    missingCount: 3,
-    errorCount: 2,
-    formatCount: 1,
-    imageCount: 1,
-    missingFields: [
-      { page: 1, line: 15, description: "缺少项目负责人签名" },
-      { page: 2, line: 8, description: "施工日期字段为空" },
-      { page: 3, line: 22, description: "材料规格信息不完整" },
-    ],
-    textErrors: [
-      {
-        page: 1,
-        line: 10,
-        description: '"施工现场"拼写错误',
-        suggestion: '应为"施工现场"',
-      },
-      {
-        page: 2,
-        line: 18,
-        description: "数字格式不统一",
-        suggestion: "统一使用阿拉伯数字",
-      },
-    ],
-    formatIssues: [
-      {
-        page: 1,
-        line: 5,
-        description: "标题格式不符合标准",
-        suggestion: "使用标准的标题格式",
-      },
-    ],
-    missingImages: [{ page: 2, description: "缺少现场施工图片" }],
-  };
-};
-
 const exportReport = () => {
   // 导出分析报告功能
   const reportContent = JSON.stringify(analysisResult.value, null, 2);
@@ -2481,10 +2338,10 @@ const downloadModifiedExcel = async (result: any) => {
 
   try {
     // 调用修改Excel的API
-    const response = await $fetch("/api/files/modify-excel", {
+    const response = await $fetch("/api/files/modify-excel-by-sequence", {
       method: "POST",
       body: {
-        originalFilePath: uploadResponse.value.path,
+        originalFilePath: uploadResponse.value.url,
         aiResult: result.result.content,
         originalFileName:
           uploadResponse.value.originalName ||
@@ -2515,26 +2372,17 @@ const downloadModifiedExcel = async (result: any) => {
 };
 
 // TEST_CODE_START: Excel修改功能测试方法
-const testExcelModification = async (
-  testCase: "res" | "res2" | "res4" | "res5" | "res6"
-) => {
+/** 测试模拟ai输出结果 */
+const testContent = ref("");
+
+const testExcelModification = async (testCase: string) => {
   isTestingExcel.value = true;
   testResult.value = null;
 
   try {
-    // 读取测试数据
-    const testDataResponse = await $fetch(`/api/${testCase}`, {
-      method: "GET",
-    });
-
-    if (!testDataResponse) {
+    if (!testContent.value) {
       throw new Error("无法读取测试数据");
     }
-
-    const aiResult =
-      typeof testDataResponse === "string"
-        ? testDataResponse
-        : JSON.stringify(testDataResponse);
 
     // 使用线上测试文件
     // const testFileUrl = 'http://47.99.61.90:5500/api/files/download/mj1b8ta94cj6fc9m1yl'
@@ -2560,7 +2408,7 @@ const testExcelModification = async (
       method: "POST",
       body: {
         originalFilePath: "assets/KHG51-SD01 烘烤炉电气件清单.xlsx",
-        aiResult: aiResult,
+        aiResult: testContent.value,
         originalFileName: "test_excel.xlsx",
       },
     });
