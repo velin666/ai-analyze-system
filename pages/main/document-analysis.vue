@@ -2341,7 +2341,7 @@ const downloadModifiedExcel = async (result: any) => {
     const response = await $fetch("/api/files/modify-excel-by-sequence", {
       method: "POST",
       body: {
-        originalFilePath: uploadResponse.value.url,
+        originalFilePath: uploadResponse.value.path,
         aiResult: result.result.content,
         originalFileName:
           uploadResponse.value.originalName ||
