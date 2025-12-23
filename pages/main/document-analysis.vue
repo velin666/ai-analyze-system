@@ -32,8 +32,11 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- 左侧：输入区域 -->
         <div class="space-y-6">
-          <!-- 文档上传区域 -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <!-- 文档上传区域 - 当有文案或图片时不显示 -->
+          <div
+            v-if="!textInput && selectedImages.length === 0"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
             <h2
               class="text-lg font-semibold text-gray-900 mb-4 flex items-center"
             >
@@ -79,7 +82,7 @@
                 </svg>
                 <p class="text-gray-600 mb-2">将文档拖放到此处，或</p>
                 <button
-                  @click="$refs.fileInput.click()"
+                  @click="(<HTMLInputElement>$refs.fileInput).click()"
                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   选择文件
@@ -584,6 +587,103 @@
               >
                 清空内容
               </button>
+            </div>
+
+            <!-- 图片上传区域 -->
+            <div class="mt-6">
+              <h3
+                class="text-sm font-semibold text-gray-700 mb-3 flex items-center"
+              >
+                <svg
+                  class="w-4 h-4 mr-2 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                图片上传（可选，最多9张）
+              </h3>
+
+              <!-- 图片上传按钮 -->
+              <div class="mb-4">
+                <button
+                  @click="(<HTMLInputElement>$refs.imageInput).click()"
+                  :disabled="selectedImages.length >= 9"
+                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  选择图片
+                </button>
+                <input
+                  ref="imageInput"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  @change="handleImageSelect"
+                  class="hidden"
+                />
+                <p class="text-xs text-gray-500 mt-2">
+                  支持 JPG、PNG、GIF 等格式，已选择
+                  {{ selectedImages.length }}/9 张
+                </p>
+              </div>
+
+              <!-- 已选择的图片预览 -->
+              <div
+                v-if="selectedImages.length > 0"
+                class="grid grid-cols-3 gap-3"
+              >
+                <div
+                  v-for="(image, index) in selectedImages"
+                  :key="index"
+                  class="relative group"
+                >
+                  <img
+                    :src="image.preview"
+                    :alt="`图片 ${index + 1}`"
+                    class="w-full h-24 object-cover rounded-lg border border-gray-300"
+                  />
+                  <button
+                    @click="removeImage(index)"
+                    class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                  <div class="text-xs text-gray-600 mt-1 truncate">
+                    {{ image.file.name }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1167,6 +1267,9 @@ const analysisResults = ref<any[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+// 图片上传相关
+const selectedImages = ref<Array<{ file: File; preview: string }>>([]);
+
 // 文档拆分相关
 const pagesPerFile = ref(30);
 const isSplittingDocument = ref(false);
@@ -1203,7 +1306,8 @@ const canAnalyze = computed(() => {
     }
     return true;
   }
-  return textInput.value.trim().length > 0;
+  // 文本输入或图片上传都可以进行分析
+  return textInput.value.trim().length > 0 || selectedImages.value.length > 0;
 });
 
 const isDocxFile = computed(() => {
@@ -1239,6 +1343,59 @@ const removeFile = () => {
 
 const clearText = () => {
   textInput.value = "";
+  // 同时清空图片
+  clearImages();
+};
+
+// 图片选择处理
+const handleImageSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.files) return;
+
+  const files = Array.from(target.files);
+  const remainingSlots = 9 - selectedImages.value.length;
+  const filesToAdd = files.slice(0, remainingSlots);
+
+  filesToAdd.forEach((file) => {
+    // 验证文件类型
+    if (!file.type.startsWith("image/")) {
+      message.warning(`${file.name} 不是有效的图片文件`);
+      return;
+    }
+
+    // 验证文件大小（限制10MB）
+    if (file.size > 10 * 1024 * 1024) {
+      message.warning(`${file.name} 文件过大，请选择小于10MB的图片`);
+      return;
+    }
+
+    // 创建预览URL
+    const preview = URL.createObjectURL(file);
+    selectedImages.value.push({ file, preview });
+  });
+
+  // 重置input以允许重复选择同一文件
+  target.value = "";
+
+  if (files.length > remainingSlots) {
+    message.warning(`最多只能选择9张图片，已自动选择前${remainingSlots}张`);
+  }
+};
+
+// 移除图片
+const removeImage = (index: number) => {
+  const image = selectedImages.value[index];
+  // 释放预览URL
+  URL.revokeObjectURL(image.preview);
+  selectedImages.value.splice(index, 1);
+};
+
+// 清空所有图片
+const clearImages = () => {
+  selectedImages.value.forEach((image) => {
+    URL.revokeObjectURL(image.preview);
+  });
+  selectedImages.value = [];
 };
 
 const formatFileSize = (bytes: number) => {
@@ -1888,6 +2045,7 @@ const clearResults = () => {
   analysisResult.value = null;
   selectedFile.value = null;
   textInput.value = "";
+  clearImages();
 };
 
 // 保存当前拆分的文件ID（用于后续获取拆分文件URL）
