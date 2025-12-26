@@ -82,7 +82,7 @@
                 </svg>
                 <p class="text-gray-600 mb-2">将文档拖放到此处，或</p>
                 <button
-                  @click="(<HTMLInputElement>$refs.fileInput).click()"
+                  @click=";(<HTMLInputElement>$refs.fileInput).click()"
                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   选择文件
@@ -220,7 +220,7 @@
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
-                {{ isSplittingDocument ? "拆分中..." : "拆分文档" }}
+                {{ isSplittingDocument ? '拆分中...' : '拆分文档' }}
               </button>
 
               <!-- 提示信息 -->
@@ -472,7 +472,7 @@
                             />
                           </svg>
                           <span class="truncate">{{
-                            typeof file === "string" ? file : file.name
+                            typeof file === 'string' ? file : file.name
                           }}</span>
                         </div>
                         <span
@@ -571,22 +571,17 @@
               文本直接输入
             </h2>
 
-            <textarea
-              v-model="textInput"
-              class="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            <a-textarea
+              v-model:value="textInput"
+              :rows="8"
+              :maxlength="10000"
+              show-count
               placeholder="您可以直接在此处输入或粘贴文档内容进行分析..."
-            ></textarea>
+              allowClear
+            />
 
-            <div
-              class="flex items-center justify-between mt-4 text-sm text-gray-500"
-            >
-              <span>{{ textInput.length }} / 10000 字符</span>
-              <button
-                @click="clearText"
-                class="text-blue-600 hover:text-blue-700"
-              >
-                清空内容
-              </button>
+            <div class="flex items-center justify-end mt-2">
+              <a-button type="link" @click="clearText"> 清空内容 </a-button>
             </div>
 
             <!-- 图片上传区域 -->
@@ -612,26 +607,16 @@
 
               <!-- 图片上传按钮 -->
               <div class="mb-4">
-                <button
-                  @click="(<HTMLInputElement>$refs.imageInput).click()"
+                <a-button
+                  type="primary"
+                  @click=";(<HTMLInputElement>$refs.imageInput).click()"
                   :disabled="selectedImages.length >= 9"
-                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
                 >
-                  <svg
-                    class="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
+                  <template #icon>
+                    <PlusOutlined />
+                  </template>
                   选择图片
-                </button>
+                </a-button>
                 <input
                   ref="imageInput"
                   type="file"
@@ -646,44 +631,42 @@
                 </p>
               </div>
 
-              <!-- 已选择的图片预览 -->
-              <div
-                v-if="selectedImages.length > 0"
-                class="grid grid-cols-3 gap-3"
-              >
-                <div
-                  v-for="(image, index) in selectedImages"
-                  :key="index"
-                  class="relative group"
-                >
-                  <img
-                    :src="image.preview"
-                    :alt="`图片 ${index + 1}`"
-                    class="w-full h-24 object-cover rounded-lg border border-gray-300"
-                  />
-                  <button
-                    @click="removeImage(index)"
-                    class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              <!-- 已选择的图片预览 - 使用 ant-design-vue Image 组件 -->
+              <a-image-preview-group v-if="selectedImages.length > 0">
+                <div class="grid grid-cols-3 gap-3">
+                  <div
+                    v-for="(image, index) in selectedImages"
+                    :key="index"
+                    class="relative group"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <a-image
+                      :src="image.preview"
+                      :alt="`图片 ${index + 1}`"
+                      class="w-full h-24 object-cover rounded-lg"
+                      :preview="{
+                        mask: '点击预览',
+                      }"
+                    />
+                    <a-button
+                      type="primary"
+                      danger
+                      size="small"
+                      shape="circle"
+                      @click="removeImage(index)"
+                      class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                  <div class="text-xs text-gray-600 mt-1 truncate">
-                    {{ image.file.name }}
+                      <template #icon>
+                        <CloseOutlined />
+                      </template>
+                    </a-button>
+                    <a-tooltip :title="image.file.name">
+                      <div class="text-xs text-gray-600 mt-1 truncate">
+                        {{ image.file.name }}
+                      </div>
+                    </a-tooltip>
                   </div>
                 </div>
-              </div>
+              </a-image-preview-group>
             </div>
           </div>
 
@@ -1128,7 +1111,7 @@
                           />
                         </svg>
                         {{
-                          isDownloadingExcel ? "生成中..." : "下载修改后的Excel"
+                          isDownloadingExcel ? '生成中...' : '下载修改后的Excel'
                         }}
                       </button>
                     </div>
@@ -1248,555 +1231,588 @@
 </template>
 
 <script setup lang="ts">
-import { message } from "ant-design-vue";
+  import { message } from 'ant-design-vue'
+  import { PlusOutlined, CloseOutlined } from '@ant-design/icons-vue'
 
-// 页面标题
-definePageMeta({
-  title: "AI文档分析",
-});
+  // 页面标题
+  definePageMeta({
+    title: 'AI文档分析',
+  })
 
-// 响应式数据
-const selectedFile = ref<File | null>(null);
-const textInput = ref("");
-const isDragging = ref(false);
-const isAnalyzing = ref(false);
-const progress = ref(0);
-const currentStep = ref("");
-const analysisResult = ref<any>(null);
-const analysisResults = ref<any[]>([]);
-const currentPage = ref(1);
-const pageSize = ref(10);
+  // 响应式数据
+  const selectedFile = ref<File | null>(null)
+  const textInput = ref('')
+  const isDragging = ref(false)
+  const isAnalyzing = ref(false)
+  const progress = ref(0)
+  const currentStep = ref('')
+  const analysisResult = ref<any>(null)
+  const analysisResults = ref<any[]>([])
+  const currentPage = ref(1)
+  const pageSize = ref(10)
 
-// 图片上传相关
-const selectedImages = ref<Array<{ file: File; preview: string }>>([]);
+  // 图片上传相关
+  const selectedImages = ref<Array<{ file: File; preview: string }>>([])
 
-// 文档拆分相关
-const pagesPerFile = ref(30);
-const isSplittingDocument = ref(false);
-const splitResult = ref<any>(null);
+  // 文档拆分相关
+  const pagesPerFile = ref(30)
+  const isSplittingDocument = ref(false)
+  const splitResult = ref<any>(null)
 
-// Excel提示词
-const excelWorkRequirements = ref<string>("");
+  // Excel提示词
+  const excelWorkRequirements = ref<string>('')
 
-// Excel下载相关
-const isDownloadingExcel = ref(false);
-const uploadResponse = ref<any>(null);
+  // Excel下载相关
+  const isDownloadingExcel = ref(false)
+  const uploadResponse = ref<any>(null)
 
-// 拆分进度相关
-const splitProgress = ref({
-  total: 0,
-  completed: 0,
-  percentage: 0,
-});
+  // 拆分进度相关
+  const splitProgress = ref({
+    total: 0,
+    completed: 0,
+    percentage: 0,
+  })
 
-const currentFileProgress = ref({
-  fileIndex: 0,
-  step: "",
-  percentage: 0,
-});
+  const currentFileProgress = ref({
+    fileIndex: 0,
+    step: '',
+    percentage: 0,
+  })
 
-const progressLogs = ref<string[]>([]);
+  const progressLogs = ref<string[]>([])
 
-// 计算属性
-const canAnalyze = computed(() => {
-  if (selectedFile.value) {
-    // Excel文件需填写提示词
-    if (isExcelFile.value) {
-      return excelWorkRequirements.value.trim().length > 0;
-    }
-    return true;
-  }
-  // 文本输入或图片上传都可以进行分析
-  return textInput.value.trim().length > 0 || selectedImages.value.length > 0;
-});
-
-const isDocxFile = computed(() => {
-  if (!selectedFile.value) return false;
-  return selectedFile.value.name.toLowerCase().endsWith(".docx");
-});
-
-const isExcelFile = computed(() => {
-  if (!selectedFile.value) return false;
-  const name = selectedFile.value.name.toLowerCase();
-  return name.endsWith(".xlsx") || name.endsWith(".xls");
-});
-
-// 方法
-const handleFileDrop = (event: DragEvent) => {
-  isDragging.value = false;
-  const files = event.dataTransfer?.files;
-  if (files && files.length > 0) {
-    selectedFile.value = files[0];
-  }
-};
-
-const handleFileSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files.length > 0) {
-    selectedFile.value = target.files[0];
-  }
-};
-
-const removeFile = () => {
-  selectedFile.value = null;
-};
-
-const clearText = () => {
-  textInput.value = "";
-  // 同时清空图片
-  clearImages();
-};
-
-// 图片选择处理
-const handleImageSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (!target.files) return;
-
-  const files = Array.from(target.files);
-  const remainingSlots = 9 - selectedImages.value.length;
-  const filesToAdd = files.slice(0, remainingSlots);
-
-  filesToAdd.forEach((file) => {
-    // 验证文件类型
-    if (!file.type.startsWith("image/")) {
-      message.warning(`${file.name} 不是有效的图片文件`);
-      return;
-    }
-
-    // 验证文件大小（限制10MB）
-    if (file.size > 10 * 1024 * 1024) {
-      message.warning(`${file.name} 文件过大，请选择小于10MB的图片`);
-      return;
-    }
-
-    // 创建预览URL
-    const preview = URL.createObjectURL(file);
-    selectedImages.value.push({ file, preview });
-  });
-
-  // 重置input以允许重复选择同一文件
-  target.value = "";
-
-  if (files.length > remainingSlots) {
-    message.warning(`最多只能选择9张图片，已自动选择前${remainingSlots}张`);
-  }
-};
-
-// 移除图片
-const removeImage = (index: number) => {
-  const image = selectedImages.value[index];
-  // 释放预览URL
-  URL.revokeObjectURL(image.preview);
-  selectedImages.value.splice(index, 1);
-};
-
-// 清空所有图片
-const clearImages = () => {
-  selectedImages.value.forEach((image) => {
-    URL.revokeObjectURL(image.preview);
-  });
-  selectedImages.value = [];
-};
-
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-};
-
-// 获取当前阶段
-const getCurrentPhase = () => {
-  if (
-    currentFileProgress.value.step.includes("ZIP") ||
-    currentFileProgress.value.step.includes("打包")
-  ) {
-    return "打包中";
-  } else if (currentFileProgress.value.step.includes("完成")) {
-    return "已完成";
-  } else if (splitProgress.value.completed > 0) {
-    return "拆分中";
-  } else {
-    return "准备中";
-  }
-};
-
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString();
-};
-
-// Toast提示函数
-const showToast = (
-  content: string,
-  type: "success" | "error" | "warning" = "error"
-) => {
-  message[type](content);
-};
-
-// 计算分页数据
-const paginatedResults = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return analysisResults.value.slice(start, end);
-});
-
-const totalPages = computed(() => {
-  return Math.ceil(analysisResults.value.length / pageSize.value);
-});
-
-// 提取content中的URL
-const extractUrls = (content: string): string[] => {
-  if (!content) return [];
-  const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g;
-  const matches = content.match(urlRegex);
-  return (matches || []).map((v) =>
-    v
-      .replace(/(?<=[)）、]).+/, "")
-      .replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, "")
-  );
-};
-
-// 获取所有报告URL
-const allReportUrls = computed(() => {
-  const urls: string[] = [];
-  analysisResults.value.forEach((result) => {
-    if (result.result?.content) {
-      const extractedUrls = extractUrls(result.result.content);
-      urls.push(...extractedUrls);
-    }
-  });
-  return urls;
-});
-
-const analyzeDocument = async () => {
-  // Excel需提示词
-  if (
-    selectedFile.value &&
-    isExcelFile.value &&
-    !excelWorkRequirements.value.trim()
-  ) {
-    message.warning("请填写Excel提示词（WorkRequirements）");
-    return;
-  }
-
-  isAnalyzing.value = true;
-  progress.value = 0;
-  analysisResult.value = null;
-
-  try {
-    // 如果是文件上传，使用新的 Coze 工作流
+  // 计算属性
+  const canAnalyze = computed(() => {
     if (selectedFile.value) {
-      await analyzeWithCozeWorkflow();
-    } else {
-      // 文本输入使用原有方法
-      await analyzeWithCozeAPI();
-    }
-  } catch (error: any) {
-    console.error("分析失败:", error);
-    message.error(error.message || "分析失败，请重试");
-    // 显示模拟结果用于演示
-    // showMockResult()
-  } finally {
-    isAnalyzing.value = false;
-  }
-};
-
-// 使用 Coze 工作流分析（文件上传）
-const analyzeWithCozeWorkflow = async () => {
-  if (!selectedFile.value) return;
-
-  // Excel分支：上传并调用Excel工作流（含WorkRequirements）
-  if (isExcelFile.value) {
-    try {
-      currentStep.value = "正在上传Excel到服务器...";
-      progress.value = 10;
-
-      const formData = new FormData();
-      formData.append("file", selectedFile.value);
-
-      const uploadResp = await $fetch("/api/files/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadResp || !uploadResp.url) {
-        throw new Error("文件上传失败，未获取到文件URL");
+      // Excel文件需填写提示词
+      if (isExcelFile.value) {
+        return excelWorkRequirements.value.trim().length > 0
       }
-
-      // 保存上传响应，用于后续下载修改后的Excel
-      uploadResponse.value = uploadResp;
-
-      const fileUrl = uploadResp.url;
-      console.log("Excel文件上传成功，URL:", fileUrl);
-
-      // 重置结果数组
-      analysisResults.value = [];
-      currentPage.value = 1;
-
-      currentStep.value = "正在调用Excel AI分析工作流...";
-      progress.value = 40;
-
-      const workflowResponse = await $fetch("/api/coze/workflow-excel", {
-        method: "POST",
-        body: {
-          fileUrl,
-          workRequirements: excelWorkRequirements.value,
-          tableSummary: `${selectedFile.value.name}`,
-        },
-      });
-
-      console.log("Excel分析响应:", workflowResponse);
-
-      // 处理响应
-      if (workflowResponse.error && workflowResponse.error_message) {
-        showToast(`Excel分析失败: ${workflowResponse.error_message}`, "error");
-        console.error("Excel分析错误:", workflowResponse);
-
-        analysisResults.value.push({
-          fileIndex: 1,
-          fileUrl,
-          error: true,
-          error_message: workflowResponse.error_message,
-          error_code: workflowResponse.error_code,
-        });
-      } else if (workflowResponse.success) {
-        analysisResults.value.push({
-          fileIndex: 1,
-          fileUrl,
-          result: workflowResponse.result,
-        });
-        analysisResult.value = processWorkflowOutput(workflowResponse.result);
-        console.log("Excel分析完成");
-      } else {
-        showToast("Excel分析失败: 未知错误", "error");
-        analysisResults.value.push({
-          fileIndex: 1,
-          fileUrl,
-          error: true,
-          error_message: "未知错误",
-        });
-      }
-
-      progress.value = 100;
-      currentStep.value = "Excel分析完成";
-    } catch (error: any) {
-      console.error("Excel工作流分析失败:", error);
-      throw error;
+      return true
     }
-    return;
+    // 文本输入或图片上传都可以进行分析
+    return textInput.value.trim().length > 0 || selectedImages.value.length > 0
+  })
+
+  const isDocxFile = computed(() => {
+    if (!selectedFile.value) return false
+    return selectedFile.value.name.toLowerCase().endsWith('.docx')
+  })
+
+  const isExcelFile = computed(() => {
+    if (!selectedFile.value) return false
+    const name = selectedFile.value.name.toLowerCase()
+    return name.endsWith('.xlsx') || name.endsWith('.xls')
+  })
+
+  // 方法
+  const handleFileDrop = (event: DragEvent) => {
+    isDragging.value = false
+    const files = event.dataTransfer?.files
+    if (files && files.length > 0) {
+      selectedFile.value = files[0]
+    }
   }
 
-  // Word分支：原有逻辑
-  try {
-    let fileUrls: string[] = [];
+  const handleFileSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files.length > 0) {
+      selectedFile.value = target.files[0]
+    }
+  }
 
-    // 检查是否有拆分文档
+  const removeFile = () => {
+    selectedFile.value = null
+  }
+
+  const clearText = () => {
+    textInput.value = ''
+    // 同时清空图片
+    clearImages()
+  }
+
+  // 图片选择处理
+  const handleImageSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (!target.files) return
+
+    const files = Array.from(target.files)
+    const remainingSlots = 9 - selectedImages.value.length
+    const filesToAdd = files.slice(0, remainingSlots)
+
+    filesToAdd.forEach(file => {
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        message.warning(`${file.name} 不是有效的图片文件`)
+        return
+      }
+
+      // 验证文件大小（限制10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        message.warning(`${file.name} 文件过大，请选择小于10MB的图片`)
+        return
+      }
+
+      // 创建预览URL
+      const preview = URL.createObjectURL(file)
+      selectedImages.value.push({ file, preview })
+    })
+
+    // 重置input以允许重复选择同一文件
+    target.value = ''
+
+    if (files.length > remainingSlots) {
+      message.warning(`最多只能选择9张图片，已自动选择前${remainingSlots}张`)
+    }
+  }
+
+  // 移除图片
+  const removeImage = (index: number) => {
+    const image = selectedImages.value[index]
+    // 释放预览URL
+    URL.revokeObjectURL(image.preview)
+    selectedImages.value.splice(index, 1)
+  }
+
+  // 清空所有图片
+  const clearImages = () => {
+    selectedImages.value.forEach(image => {
+      URL.revokeObjectURL(image.preview)
+    })
+    selectedImages.value = []
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // 获取当前阶段
+  const getCurrentPhase = () => {
     if (
-      splitResult.value &&
-      splitResult.value.files &&
-      splitResult.value.files.length > 0
+      currentFileProgress.value.step.includes('ZIP') ||
+      currentFileProgress.value.step.includes('打包')
     ) {
-      // 有拆分文档，获取拆分文件的URL列表
-      currentStep.value = `正在获取 ${splitResult.value.files.length} 个拆分文件的URL...`;
-      progress.value = 10;
-
-      try {
-        // 从拆分结果中获取文件ID（需要保存在拆分时）
-        // 假设在拆分时我们保存了原始文件的ID
-        const originalFileId = splitResult.value.fileId;
-
-        if (!originalFileId) {
-          throw new Error("拆分结果中缺少文件ID，请重新拆分文档");
-        }
-
-        const urlResponse = await $fetch("/api/files/split-and-get-urls", {
-          method: "POST",
-          body: { fileId: originalFileId },
-        });
-
-        if (
-          !urlResponse ||
-          !urlResponse.fileUrls ||
-          urlResponse.fileUrls.length === 0
-        ) {
-          throw new Error("获取拆分文件URL失败");
-        }
-
-        fileUrls = urlResponse.fileUrls;
-        console.log(`成功获取 ${fileUrls.length} 个拆分文件的URL`);
-      } catch (error: any) {
-        console.error("获取拆分文件URL失败:", error);
-        showToast(
-          `获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`,
-          "error"
-        );
-        return;
-      }
+      return '打包中'
+    } else if (currentFileProgress.value.step.includes('完成')) {
+      return '已完成'
+    } else if (splitProgress.value.completed > 0) {
+      return '拆分中'
     } else {
-      // 单个文件：上传到本地服务器
-      currentStep.value = "正在上传文件到服务器...";
-      progress.value = 10;
+      return '准备中'
+    }
+  }
 
-      const formData = new FormData();
-      formData.append("file", selectedFile.value);
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString()
+  }
 
-      const uploadResponse = await $fetch("/api/files/upload", {
-        method: "POST",
-        body: formData,
-      });
+  // Toast提示函数
+  const showToast = (
+    content: string,
+    type: 'success' | 'error' | 'warning' = 'error'
+  ) => {
+    message[type](content)
+  }
 
-      if (!uploadResponse || !uploadResponse.url) {
-        throw new Error("文件上传失败，未获取到文件URL");
+  // 计算分页数据
+  const paginatedResults = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return analysisResults.value.slice(start, end)
+  })
+
+  const totalPages = computed(() => {
+    return Math.ceil(analysisResults.value.length / pageSize.value)
+  })
+
+  // 提取content中的URL
+  const extractUrls = (content: string): string[] => {
+    if (!content) return []
+    const urlRegex = /https?:\/\/[^\s"']+\.docx[^\s"']*/g
+    const matches = content.match(urlRegex)
+    return (matches || []).map(v =>
+      v
+        .replace(/(?<=[)）、]).+/, '')
+        .replaceAll(/([、)）\]|[\u4e00-\u9fa5])/g, '')
+    )
+  }
+
+  // 获取所有报告URL
+  const allReportUrls = computed(() => {
+    const urls: string[] = []
+    analysisResults.value.forEach(result => {
+      if (result.result?.content) {
+        const extractedUrls = extractUrls(result.result.content)
+        urls.push(...extractedUrls)
       }
+    })
+    return urls
+  })
 
-      fileUrls = [uploadResponse.url];
-      console.log("文件上传成功，URL:", uploadResponse.url);
+  const analyzeDocument = async () => {
+    // Excel需提示词
+    if (
+      selectedFile.value &&
+      isExcelFile.value &&
+      !excelWorkRequirements.value.trim()
+    ) {
+      message.warning('请填写Excel提示词（WorkRequirements）')
+      return
     }
 
-    // 重置结果数组
-    analysisResults.value = [];
-    currentPage.value = 1;
+    isAnalyzing.value = true
+    progress.value = 0
+    analysisResult.value = null
 
-    // 在前端循环调用API，每次处理一个文件
-    const totalFiles = fileUrls.length;
-    for (let i = 0; i < totalFiles; i++) {
-      const fileUrl = fileUrls[i];
-      currentStep.value = `正在分析第 ${i + 1}/${totalFiles} 个文件...`;
-      progress.value = 20 + (i / totalFiles) * 70;
+    try {
+      // 如果是文件上传，使用新的 Coze 工作流
+      if (selectedFile.value) {
+        await analyzeWithCozeWorkflow()
+      } else {
+        // 文本输入使用原有方法
+        await analyzeWithCozeAPI()
+      }
+    } catch (error: any) {
+      console.error('分析失败:', error)
+      message.error(error.message || '分析失败，请重试')
+      // 显示模拟结果用于演示
+      // showMockResult()
+    } finally {
+      isAnalyzing.value = false
+    }
+  }
 
+  // 使用 Coze 工作流分析（文件上传）
+  const analyzeWithCozeWorkflow = async () => {
+    if (!selectedFile.value) return
+
+    // Excel分支：上传并调用Excel工作流（含WorkRequirements）
+    if (isExcelFile.value) {
       try {
-        console.log(`开始分析第 ${i + 1}/${totalFiles} 个文件: ${fileUrl}`);
+        currentStep.value = '正在上传Excel到服务器...'
+        progress.value = 10
 
-        const workflowResponse = await $fetch("/api/coze/workflow", {
-          method: "POST",
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const uploadResp = await $fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResp || !uploadResp.url) {
+          throw new Error('文件上传失败，未获取到文件URL')
+        }
+
+        // 保存上传响应，用于后续下载修改后的Excel
+        uploadResponse.value = uploadResp
+
+        const fileUrl = uploadResp.url
+        console.log('Excel文件上传成功，URL:', fileUrl)
+
+        // 重置结果数组
+        analysisResults.value = []
+        currentPage.value = 1
+
+        currentStep.value = '正在调用Excel AI分析工作流...'
+        progress.value = 40
+
+        const workflowResponse = await $fetch('/api/coze/workflow-excel', {
+          method: 'POST',
           body: {
             fileUrl,
-            tableSummary: `${selectedFile.value.name} - 第${i + 1}部分`,
+            workRequirements: excelWorkRequirements.value,
+            tableSummary: `${selectedFile.value.name}`,
           },
-        });
+        })
 
-        console.log(`第 ${i + 1} 个文件分析响应:`, workflowResponse);
+        console.log('Excel分析响应:', workflowResponse)
 
-        // 检查是否有错误
+        // 处理响应
         if (workflowResponse.error && workflowResponse.error_message) {
-          showToast(
-            `第 ${i + 1} 个文件分析失败: ${workflowResponse.error_message}`,
-            "error"
-          );
-          console.error(`第 ${i + 1} 个文件错误:`, workflowResponse);
+          showToast(`Excel分析失败: ${workflowResponse.error_message}`, 'error')
+          console.error('Excel分析错误:', workflowResponse)
 
-          // 即使出错也记录结果
           analysisResults.value.push({
-            fileIndex: i + 1,
+            fileIndex: 1,
             fileUrl,
             error: true,
             error_message: workflowResponse.error_message,
             error_code: workflowResponse.error_code,
-          });
+          })
         } else if (workflowResponse.success) {
-          // 成功的结果
           analysisResults.value.push({
-            fileIndex: i + 1,
+            fileIndex: 1,
             fileUrl,
             result: workflowResponse.result,
-          });
-          console.log(`第 ${i + 1} 个文件分析完成`);
+          })
+          analysisResult.value = processWorkflowOutput(workflowResponse.result)
+          console.log('Excel分析完成')
         } else {
-          // 未知错误
-          showToast(`第 ${i + 1} 个文件分析失败: 未知错误`, "error");
+          showToast('Excel分析失败: 未知错误', 'error')
+          analysisResults.value.push({
+            fileIndex: 1,
+            fileUrl,
+            error: true,
+            error_message: '未知错误',
+          })
+        }
+
+        progress.value = 100
+        currentStep.value = 'Excel分析完成'
+      } catch (error: any) {
+        console.error('Excel工作流分析失败:', error)
+        throw error
+      }
+      return
+    }
+
+    // Word分支：原有逻辑
+    try {
+      let fileUrls: string[] = []
+
+      // 检查是否有拆分文档
+      if (
+        splitResult.value &&
+        splitResult.value.files &&
+        splitResult.value.files.length > 0
+      ) {
+        // 有拆分文档，获取拆分文件的URL列表
+        currentStep.value = `正在获取 ${splitResult.value.files.length} 个拆分文件的URL...`
+        progress.value = 10
+
+        try {
+          // 从拆分结果中获取文件ID（需要保存在拆分时）
+          // 假设在拆分时我们保存了原始文件的ID
+          const originalFileId = splitResult.value.fileId
+
+          if (!originalFileId) {
+            throw new Error('拆分结果中缺少文件ID，请重新拆分文档')
+          }
+
+          const urlResponse = await $fetch('/api/files/split-and-get-urls', {
+            method: 'POST',
+            body: { fileId: originalFileId },
+          })
+
+          if (
+            !urlResponse ||
+            !urlResponse.fileUrls ||
+            urlResponse.fileUrls.length === 0
+          ) {
+            throw new Error('获取拆分文件URL失败')
+          }
+
+          fileUrls = urlResponse.fileUrls
+          console.log(`成功获取 ${fileUrls.length} 个拆分文件的URL`)
+        } catch (error: any) {
+          console.error('获取拆分文件URL失败:', error)
+          showToast(
+            `获取拆分文件URL失败: ${error.message}。请重新拆分文档后再试。`,
+            'error'
+          )
+          return
+        }
+      } else {
+        // 单个文件：上传到本地服务器
+        currentStep.value = '正在上传文件到服务器...'
+        progress.value = 10
+
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const uploadResponse = await $fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResponse || !uploadResponse.url) {
+          throw new Error('文件上传失败，未获取到文件URL')
+        }
+
+        fileUrls = [uploadResponse.url]
+        console.log('文件上传成功，URL:', uploadResponse.url)
+      }
+
+      // 重置结果数组
+      analysisResults.value = []
+      currentPage.value = 1
+
+      // 在前端循环调用API，每次处理一个文件
+      const totalFiles = fileUrls.length
+      for (let i = 0; i < totalFiles; i++) {
+        const fileUrl = fileUrls[i]
+        currentStep.value = `正在分析第 ${i + 1}/${totalFiles} 个文件...`
+        progress.value = 20 + (i / totalFiles) * 70
+
+        try {
+          console.log(`开始分析第 ${i + 1}/${totalFiles} 个文件: ${fileUrl}`)
+
+          const workflowResponse = await $fetch('/api/coze/workflow', {
+            method: 'POST',
+            body: {
+              fileUrl,
+              tableSummary: `${selectedFile.value.name} - 第${i + 1}部分`,
+            },
+          })
+
+          console.log(`第 ${i + 1} 个文件分析响应:`, workflowResponse)
+
+          // 检查是否有错误
+          if (workflowResponse.error && workflowResponse.error_message) {
+            showToast(
+              `第 ${i + 1} 个文件分析失败: ${workflowResponse.error_message}`,
+              'error'
+            )
+            console.error(`第 ${i + 1} 个文件错误:`, workflowResponse)
+
+            // 即使出错也记录结果
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              error: true,
+              error_message: workflowResponse.error_message,
+              error_code: workflowResponse.error_code,
+            })
+          } else if (workflowResponse.success) {
+            // 成功的结果
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              result: workflowResponse.result,
+            })
+            console.log(`第 ${i + 1} 个文件分析完成`)
+          } else {
+            // 未知错误
+            showToast(`第 ${i + 1} 个文件分析失败: 未知错误`, 'error')
+            analysisResults.value.push({
+              fileIndex: i + 1,
+              fileUrl,
+              error: true,
+              error_message: '未知错误',
+            })
+          }
+        } catch (error: any) {
+          console.error(`第 ${i + 1} 个文件分析失败:`, error)
+          showToast(
+            `第 ${i + 1} 个文件分析失败: ${error.message || '网络错误'}`,
+            'error'
+          )
+
           analysisResults.value.push({
             fileIndex: i + 1,
             fileUrl,
             error: true,
-            error_message: "未知错误",
-          });
+            error_message: error.message || '网络错误',
+          })
         }
-      } catch (error: any) {
-        console.error(`第 ${i + 1} 个文件分析失败:`, error);
+      }
+
+      progress.value = 90
+      currentStep.value = '分析完成，正在生成报告...'
+
+      // 合并所有成功的文件结果用于兼容旧的显示逻辑
+      const successResults = analysisResults.value.filter(r => !r.error)
+      if (successResults.length > 0) {
+        analysisResult.value = mergeAnalysisResults(successResults)
+        console.log(`合并后的分析结果:`, analysisResult.value)
+      }
+
+      progress.value = 100
+      currentStep.value = `分析完成！成功: ${successResults.length}/${totalFiles}`
+
+      if (successResults.length < totalFiles) {
         showToast(
-          `第 ${i + 1} 个文件分析失败: ${error.message || "网络错误"}`,
-          "error"
-        );
-
-        analysisResults.value.push({
-          fileIndex: i + 1,
-          fileUrl,
-          error: true,
-          error_message: error.message || "网络错误",
-        });
+          `部分文件分析失败，成功: ${successResults.length}/${totalFiles}`,
+          'warning'
+        )
       }
+    } catch (error: any) {
+      console.error('Coze工作流分析失败:', error)
+      throw error
     }
-
-    progress.value = 90;
-    currentStep.value = "分析完成，正在生成报告...";
-
-    // 合并所有成功的文件结果用于兼容旧的显示逻辑
-    const successResults = analysisResults.value.filter((r) => !r.error);
-    if (successResults.length > 0) {
-      analysisResult.value = mergeAnalysisResults(successResults);
-      console.log(`合并后的分析结果:`, analysisResult.value);
-    }
-
-    progress.value = 100;
-    currentStep.value = `分析完成！成功: ${successResults.length}/${totalFiles}`;
-
-    if (successResults.length < totalFiles) {
-      showToast(
-        `部分文件分析失败，成功: ${successResults.length}/${totalFiles}`,
-        "warning"
-      );
-    }
-  } catch (error: any) {
-    console.error("Coze工作流分析失败:", error);
-    throw error;
   }
-};
 
-// 处理工作流输出
-const processWorkflowOutput = (output: any) => {
-  // 根据实际的工作流输出格式进行解析
-  try {
-    const result = typeof output === "string" ? JSON.parse(output) : output;
+  // 处理工作流输出
+  const processWorkflowOutput = (output: any) => {
+    // 根据实际的工作流输出格式进行解析
+    try {
+      const result = typeof output === 'string' ? JSON.parse(output) : output
 
-    // 如果后端已经解析好返回了content字段
-    if (result.success && result.content !== undefined) {
-      const content = result.content;
+      // 如果后端已经解析好返回了content字段
+      if (result.success && result.content !== undefined) {
+        const content = result.content
 
-      // 尝试解析content为JSON（如果content是JSON字符串）
-      let parsedContent = content;
-      if (typeof content === "string") {
-        try {
-          parsedContent = JSON.parse(content);
-        } catch {
-          // content不是JSON，保持原样
-          parsedContent = { rawContent: content };
+        // 尝试解析content为JSON（如果content是JSON字符串）
+        let parsedContent = content
+        if (typeof content === 'string') {
+          try {
+            parsedContent = JSON.parse(content)
+          } catch {
+            // content不是JSON，保持原样
+            parsedContent = { rawContent: content }
+          }
+        }
+
+        // 如果parsedContent有结构化数据，使用它
+        if (parsedContent && typeof parsedContent === 'object') {
+          return {
+            missingCount: parsedContent.missing_fields?.length || 0,
+            errorCount: parsedContent.text_errors?.length || 0,
+            formatCount: parsedContent.format_issues?.length || 0,
+            imageCount: parsedContent.missing_images?.length || 0,
+            missingFields: parsedContent.missing_fields || [],
+            textErrors: parsedContent.text_errors || [],
+            formatIssues: parsedContent.format_issues || [],
+            missingImages: parsedContent.missing_images || [],
+            summary:
+              parsedContent.summary ||
+              parsedContent.rawContent ||
+              content ||
+              '文档分析完成',
+            score: parsedContent.quality_score || 85,
+            usage: result.usage, // 保留使用量信息
+            rawContent: content, // 保留原始content
+          }
+        }
+
+        // 如果content是纯文本，作为summary展示
+        return {
+          missingCount: 0,
+          errorCount: 0,
+          formatCount: 0,
+          imageCount: 0,
+          missingFields: [],
+          textErrors: [],
+          formatIssues: [],
+          missingImages: [],
+          summary: content || '文档分析完成',
+          score: 85,
+          usage: result.usage,
+          rawContent: content,
         }
       }
 
-      // 如果parsedContent有结构化数据，使用它
-      if (parsedContent && typeof parsedContent === "object") {
-        return {
-          missingCount: parsedContent.missing_fields?.length || 0,
-          errorCount: parsedContent.text_errors?.length || 0,
-          formatCount: parsedContent.format_issues?.length || 0,
-          imageCount: parsedContent.missing_images?.length || 0,
-          missingFields: parsedContent.missing_fields || [],
-          textErrors: parsedContent.text_errors || [],
-          formatIssues: parsedContent.format_issues || [],
-          missingImages: parsedContent.missing_images || [],
-          summary:
-            parsedContent.summary ||
-            parsedContent.rawContent ||
-            content ||
-            "文档分析完成",
-          score: parsedContent.quality_score || 85,
-          usage: result.usage, // 保留使用量信息
-          rawContent: content, // 保留原始content
-        };
+      // 兼容旧格式
+      return {
+        missingCount: result.missing_fields?.length || 0,
+        errorCount: result.text_errors?.length || 0,
+        formatCount: result.format_issues?.length || 0,
+        imageCount: result.missing_images?.length || 0,
+        missingFields: result.missing_fields || [],
+        textErrors: result.text_errors || [],
+        formatIssues: result.format_issues || [],
+        missingImages: result.missing_images || [],
+        summary: result.summary || '文档分析完成',
+        score: result.quality_score || 85,
       }
-
-      // 如果content是纯文本，作为summary展示
+    } catch (error) {
+      console.error('解析工作流输出失败:', error)
+      // 返回原始输出
       return {
         missingCount: 0,
         errorCount: 0,
@@ -1806,517 +1822,474 @@ const processWorkflowOutput = (output: any) => {
         textErrors: [],
         formatIssues: [],
         missingImages: [],
-        summary: content || "文档分析完成",
+        summary:
+          typeof output === 'string'
+            ? output
+            : JSON.stringify(output) || '文档分析完成',
         score: 85,
-        usage: result.usage,
-        rawContent: content,
-      };
+      }
+    }
+  }
+
+  // 合并多个文件的分析结果
+  const mergeAnalysisResults = (results: any[]) => {
+    if (!results || results.length === 0) {
+      return {
+        missingCount: 0,
+        errorCount: 0,
+        formatCount: 0,
+        imageCount: 0,
+        missingFields: [],
+        textErrors: [],
+        formatIssues: [],
+        missingImages: [],
+        summary: '未获取到分析结果',
+        score: 0,
+      }
     }
 
-    // 兼容旧格式
-    return {
-      missingCount: result.missing_fields?.length || 0,
-      errorCount: result.text_errors?.length || 0,
-      formatCount: result.format_issues?.length || 0,
-      imageCount: result.missing_images?.length || 0,
-      missingFields: result.missing_fields || [],
-      textErrors: result.text_errors || [],
-      formatIssues: result.format_issues || [],
-      missingImages: result.missing_images || [],
-      summary: result.summary || "文档分析完成",
-      score: result.quality_score || 85,
-    };
-  } catch (error) {
-    console.error("解析工作流输出失败:", error);
-    // 返回原始输出
-    return {
-      missingCount: 0,
-      errorCount: 0,
-      formatCount: 0,
-      imageCount: 0,
-      missingFields: [],
-      textErrors: [],
-      formatIssues: [],
-      missingImages: [],
-      summary:
-        typeof output === "string"
-          ? output
-          : JSON.stringify(output) || "文档分析完成",
-      score: 85,
-    };
-  }
-};
+    // 如果只有一个文件，直接处理其结果
+    if (results.length === 1) {
+      return processWorkflowOutput(results[0].result)
+    }
 
-// 合并多个文件的分析结果
-const mergeAnalysisResults = (results: any[]) => {
-  if (!results || results.length === 0) {
-    return {
+    // 合并多个文件的结果
+    const merged = {
       missingCount: 0,
       errorCount: 0,
       formatCount: 0,
       imageCount: 0,
-      missingFields: [],
-      textErrors: [],
-      formatIssues: [],
-      missingImages: [],
-      summary: "未获取到分析结果",
+      missingFields: [] as any[],
+      textErrors: [] as any[],
+      formatIssues: [] as any[],
+      missingImages: [] as any[],
+      summary: '',
       score: 0,
-    };
+    }
+
+    let totalScore = 0
+
+    results.forEach((fileResult, index) => {
+      const processed = processWorkflowOutput(fileResult.result)
+
+      merged.missingCount += processed.missingCount
+      merged.errorCount += processed.errorCount
+      merged.formatCount += processed.formatCount
+      merged.imageCount += processed.imageCount
+
+      // 添加文件索引到每个问题项
+      merged.missingFields.push(
+        ...(processed.missingFields || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.textErrors.push(
+        ...(processed.textErrors || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.formatIssues.push(
+        ...(processed.formatIssues || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+      merged.missingImages.push(
+        ...(processed.missingImages || []).map((item: any) => ({
+          ...item,
+          fileIndex: index + 1,
+        }))
+      )
+
+      totalScore += processed.score || 0
+    })
+
+    merged.score = Math.round(totalScore / results.length)
+    merged.summary = `已分析 ${results.length} 个文件，平均质量分数: ${merged.score}`
+
+    return merged
   }
 
-  // 如果只有一个文件，直接处理其结果
-  if (results.length === 1) {
-    return processWorkflowOutput(results[0].result);
+  // 使用原有 API 分析（文本输入）
+  const analyzeWithCozeAPI = async () => {
+    const steps = [
+      '正在读取文档内容...',
+      '正在进行AI语义分析...',
+      '正在检查格式规范...',
+      '正在识别漏填项...',
+      '正在生成分析报告...',
+    ]
+
+    for (let i = 0; i < steps.length; i++) {
+      currentStep.value = steps[i]
+      progress.value = ((i + 1) / steps.length) * 100
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+
+    await callCozeAPI()
   }
 
-  // 合并多个文件的结果
-  const merged = {
-    missingCount: 0,
-    errorCount: 0,
-    formatCount: 0,
-    imageCount: 0,
-    missingFields: [] as any[],
-    textErrors: [] as any[],
-    formatIssues: [] as any[],
-    missingImages: [] as any[],
-    summary: "",
-    score: 0,
-  };
+  const callCozeAPI = async () => {
+    const content = selectedFile.value
+      ? await readFileContent(selectedFile.value)
+      : textInput.value
 
-  let totalScore = 0;
-
-  results.forEach((fileResult, index) => {
-    const processed = processWorkflowOutput(fileResult.result);
-
-    merged.missingCount += processed.missingCount;
-    merged.errorCount += processed.errorCount;
-    merged.formatCount += processed.formatCount;
-    merged.imageCount += processed.imageCount;
-
-    // 添加文件索引到每个问题项
-    merged.missingFields.push(
-      ...(processed.missingFields || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1,
-      }))
-    );
-    merged.textErrors.push(
-      ...(processed.textErrors || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1,
-      }))
-    );
-    merged.formatIssues.push(
-      ...(processed.formatIssues || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1,
-      }))
-    );
-    merged.missingImages.push(
-      ...(processed.missingImages || []).map((item: any) => ({
-        ...item,
-        fileIndex: index + 1,
-      }))
-    );
-
-    totalScore += processed.score || 0;
-  });
-
-  merged.score = Math.round(totalScore / results.length);
-  merged.summary = `已分析 ${results.length} 个文件，平均质量分数: ${merged.score}`;
-
-  return merged;
-};
-
-// 使用原有 API 分析（文本输入）
-const analyzeWithCozeAPI = async () => {
-  const steps = [
-    "正在读取文档内容...",
-    "正在进行AI语义分析...",
-    "正在检查格式规范...",
-    "正在识别漏填项...",
-    "正在生成分析报告...",
-  ];
-
-  for (let i = 0; i < steps.length; i++) {
-    currentStep.value = steps[i];
-    progress.value = ((i + 1) / steps.length) * 100;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
-
-  await callCozeAPI();
-};
-
-const callCozeAPI = async () => {
-  const content = selectedFile.value
-    ? await readFileContent(selectedFile.value)
-    : textInput.value;
-
-  const response = await $fetch("/api/coze/analyze", {
-    method: "POST",
-    body: {
-      content,
-      type: selectedFile.value ? "file" : "text",
-    },
-  });
-
-  analysisResult.value = (response as any).result;
-};
-
-const readFileContent = async (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-};
-
-const exportReport = () => {
-  // 导出分析报告功能
-  const reportContent = JSON.stringify(analysisResult.value, null, 2);
-  const blob = new Blob([reportContent], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "文档分析报告.json";
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-// 导出单个报告（从URL下载）
-const exportSingleReport = async (url: string, fileName: string) => {
-  try {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("报告下载已开始", "success");
-  } catch (error: any) {
-    console.error("下载报告失败:", error);
-    showToast("下载报告失败: " + error.message, "error");
-  }
-};
-
-// 批量导出报告
-const batchExportReports = async () => {
-  if (allReportUrls.value.length === 0) {
-    showToast("没有可导出的报告", "warning");
-    return;
-  }
-
-  try {
-    currentStep.value = `正在打包 ${allReportUrls.value.length} 个报告...`;
-    isAnalyzing.value = true;
-
-    const response = await $fetch("/api/reports/batch-export", {
-      method: "POST",
+    const response = await $fetch('/api/coze/analyze', {
+      method: 'POST',
       body: {
-        reportUrls: allReportUrls.value,
+        content,
+        type: selectedFile.value ? 'file' : 'text',
       },
-    });
+    })
 
-    if (response.success && response.downloadUrl) {
-      // 下载ZIP文件
-      const link = document.createElement("a");
-      link.href = response.downloadUrl;
-      link.download = response.fileName || "reports.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    analysisResult.value = (response as any).result
+  }
 
-      showToast(`成功打包 ${response.totalFiles} 个报告`, "success");
-    } else {
-      throw new Error("批量导出失败");
+  const readFileContent = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsText(file)
+    })
+  }
+
+  const exportReport = () => {
+    // 导出分析报告功能
+    const reportContent = JSON.stringify(analysisResult.value, null, 2)
+    const blob = new Blob([reportContent], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '文档分析报告.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // 导出单个报告（从URL下载）
+  const exportSingleReport = async (url: string, fileName: string) => {
+    try {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      showToast('报告下载已开始', 'success')
+    } catch (error: any) {
+      console.error('下载报告失败:', error)
+      showToast('下载报告失败: ' + error.message, 'error')
     }
-  } catch (error: any) {
-    console.error("批量导出失败:", error);
-    showToast("批量导出失败: " + error.message, "error");
-  } finally {
-    isAnalyzing.value = false;
-    currentStep.value = "";
   }
-};
 
-const clearResults = () => {
-  analysisResult.value = null;
-  selectedFile.value = null;
-  textInput.value = "";
-  clearImages();
-};
-
-// 保存当前拆分的文件ID（用于后续获取拆分文件URL）
-const currentSplitFileId = ref<string | null>(null);
-
-// 文档拆分方法
-const splitDocument = async () => {
-  if (!selectedFile.value || !isDocxFile.value) return;
-
-  // 重置进度状态
-  isSplittingDocument.value = true;
-  splitResult.value = null;
-  currentSplitFileId.value = null;
-  splitProgress.value = { total: 0, completed: 0, percentage: 0 };
-  currentFileProgress.value = { fileIndex: 0, step: "", percentage: 0 };
-  progressLogs.value = [];
-
-  try {
-    // 1. 上传文件
-    const formData = new FormData();
-    formData.append("file", selectedFile.value);
-
-    const uploadResponse = await $fetch("/api/files/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const fileId = (uploadResponse as any).id;
-    const originalName = (uploadResponse as any).originalName;
-    currentSplitFileId.value = fileId; // 保存文件ID
-    progressLogs.value.push("文件上传完成，开始拆分...");
-
-    // 2. 使用EventSource接收实时进度
-    progressLogs.value.push("开始拆分处理...");
-
-    // 尝试使用实时进度版本
-    const useRealTimeProgress = true; // 可以设置为false使用简单版本
-
-    if (useRealTimeProgress) {
-      await handleRealTimeProgress(fileId, originalName);
-    } else {
-      await handleSimpleProgress(fileId, originalName);
+  // 批量导出报告
+  const batchExportReports = async () => {
+    if (allReportUrls.value.length === 0) {
+      showToast('没有可导出的报告', 'warning')
+      return
     }
-  } catch (error: any) {
-    console.error("拆分失败:", error);
-    message.error(error.message || "拆分失败，请重试");
-  } finally {
-    isSplittingDocument.value = false;
-  }
-};
 
-// 实时进度处理方法
-const handleRealTimeProgress = (fileId: string, originalName: string) => {
-  return new Promise<void>((resolve, reject) => {
-    const eventSource = new EventSource(
-      `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${
-        pagesPerFile.value
-      }&originalName=${encodeURIComponent(originalName)}`
-    );
+    try {
+      currentStep.value = `正在打包 ${allReportUrls.value.length} 个报告...`
+      isAnalyzing.value = true
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleProgressMessage(data, resolve, reject, eventSource);
-      } catch (e) {
-        console.error("解析进度数据失败:", e);
-        eventSource.close();
-        reject(e);
+      const response = await $fetch('/api/reports/batch-export', {
+        method: 'POST',
+        body: {
+          reportUrls: allReportUrls.value,
+        },
+      })
+
+      if (response.success && response.downloadUrl) {
+        // 下载ZIP文件
+        const link = document.createElement('a')
+        link.href = response.downloadUrl
+        link.download = response.fileName || 'reports.zip'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast(`成功打包 ${response.totalFiles} 个报告`, 'success')
+      } else {
+        throw new Error('批量导出失败')
       }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("EventSource错误:", error);
-      eventSource.close();
-      reject(new Error("连接错误"));
-    };
-
-    // 5分钟超时
-    setTimeout(() => {
-      eventSource.close();
-      reject(new Error("处理超时"));
-    }, 300000);
-  });
-};
-
-// 简单进度处理方法（备用）
-const handleSimpleProgress = async (fileId: string, originalName: string) => {
-  // 调用简单版本的拆分API
-  const splitResponse = await $fetch("/api/files/split-docx", {
-    method: "POST",
-    body: {
-      fileId: fileId,
-      pagesPerFile: pagesPerFile.value,
-      originalName: originalName,
-    },
-  });
-
-  // 将文件ID添加到拆分结果中
-  splitResult.value = {
-    ...(splitResponse as any),
-    fileId: currentSplitFileId.value,
-  };
-  progressLogs.value.push("拆分完成！");
-};
-
-// 处理进度消息
-const handleProgressMessage = (
-  data: any,
-  resolve: Function,
-  reject: Function,
-  eventSource: EventSource
-) => {
-  switch (data.type) {
-    case "progress":
-      handleProgressUpdate(data.data);
-      break;
-    case "log":
-      progressLogs.value.push(data.data.message);
-      // 保持日志数量不超过50条
-      if (progressLogs.value.length > 50) {
-        progressLogs.value = progressLogs.value.slice(-50);
-      }
-      break;
-    case "info":
-      progressLogs.value.push(data.data.message);
-      break;
-    case "complete":
-      eventSource.close();
-      // 将文件ID添加到拆分结果中
-      splitResult.value = {
-        ...data.data,
-        fileId: currentSplitFileId.value,
-      };
-      progressLogs.value.push("拆分完成！");
-      resolve();
-      break;
-    case "error":
-      eventSource.close();
-      progressLogs.value.push("错误: " + data.data.message);
-      reject(new Error(data.data.message));
-      break;
+    } catch (error: any) {
+      console.error('批量导出失败:', error)
+      showToast('批量导出失败: ' + error.message, 'error')
+    } finally {
+      isAnalyzing.value = false
+      currentStep.value = ''
+    }
   }
-};
 
-// 处理进度更新
-const handleProgressUpdate = (progressData: any) => {
-  switch (progressData.type) {
-    case "total_files":
-      splitProgress.value.total = progressData.total;
-      progressLogs.value.push(`总共需要拆分 ${progressData.total} 个文件`);
-      break;
-    case "file_start":
-      currentFileProgress.value.fileIndex = progressData.current;
-      currentFileProgress.value.step = "开始处理";
-      currentFileProgress.value.percentage = 0;
-      progressLogs.value.push(`开始处理第 ${progressData.current} 个文件`);
-      break;
-    case "file_step":
-      currentFileProgress.value.fileIndex = progressData.fileIndex;
-      currentFileProgress.value.step = progressData.step;
-      currentFileProgress.value.percentage = progressData.percentage;
-      break;
-    case "file_complete":
-      splitProgress.value.completed = progressData.completed;
-      splitProgress.value.percentage = Math.round(
-        (progressData.completed / progressData.total) * 100
-      );
-      currentFileProgress.value.percentage = 100;
-      progressLogs.value.push(
-        `完成第 ${progressData.completed} 个文件 (共 ${progressData.total} 个)`
-      );
-      break;
-    case "all_complete":
-      splitProgress.value.completed = progressData.completed;
-      splitProgress.value.percentage = 100;
-      currentFileProgress.value.percentage = 100;
-      currentFileProgress.value.step = "所有文件拆分完成";
-      break;
-    case "zip_start":
-      currentFileProgress.value.fileIndex = 0;
-      currentFileProgress.value.step = "创建ZIP文件";
-      currentFileProgress.value.percentage = 0;
-      progressLogs.value.push("开始创建ZIP压缩包...");
-      break;
-    case "zip_progress":
-      currentFileProgress.value.step = `打包文件: ${progressData.fileName}`;
-      currentFileProgress.value.percentage = progressData.percentage;
-      if (
-        progressData.current % 5 === 0 ||
-        progressData.current === progressData.total
-      ) {
+  const clearResults = () => {
+    analysisResult.value = null
+    selectedFile.value = null
+    textInput.value = ''
+    clearImages()
+  }
+
+  // 保存当前拆分的文件ID（用于后续获取拆分文件URL）
+  const currentSplitFileId = ref<string | null>(null)
+
+  // 文档拆分方法
+  const splitDocument = async () => {
+    if (!selectedFile.value || !isDocxFile.value) return
+
+    // 重置进度状态
+    isSplittingDocument.value = true
+    splitResult.value = null
+    currentSplitFileId.value = null
+    splitProgress.value = { total: 0, completed: 0, percentage: 0 }
+    currentFileProgress.value = { fileIndex: 0, step: '', percentage: 0 }
+    progressLogs.value = []
+
+    try {
+      // 1. 上传文件
+      const formData = new FormData()
+      formData.append('file', selectedFile.value)
+
+      const uploadResponse = await $fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const fileId = (uploadResponse as any).id
+      const originalName = (uploadResponse as any).originalName
+      currentSplitFileId.value = fileId // 保存文件ID
+      progressLogs.value.push('文件上传完成，开始拆分...')
+
+      // 2. 使用EventSource接收实时进度
+      progressLogs.value.push('开始拆分处理...')
+
+      // 尝试使用实时进度版本
+      const useRealTimeProgress = true // 可以设置为false使用简单版本
+
+      if (useRealTimeProgress) {
+        await handleRealTimeProgress(fileId, originalName)
+      } else {
+        await handleSimpleProgress(fileId, originalName)
+      }
+    } catch (error: any) {
+      console.error('拆分失败:', error)
+      message.error(error.message || '拆分失败，请重试')
+    } finally {
+      isSplittingDocument.value = false
+    }
+  }
+
+  // 实时进度处理方法
+  const handleRealTimeProgress = (fileId: string, originalName: string) => {
+    return new Promise<void>((resolve, reject) => {
+      const eventSource = new EventSource(
+        `/api/files/split-docx-stream?fileId=${fileId}&pagesPerFile=${
+          pagesPerFile.value
+        }&originalName=${encodeURIComponent(originalName)}`
+      )
+
+      eventSource.onmessage = event => {
+        try {
+          const data = JSON.parse(event.data)
+          handleProgressMessage(data, resolve, reject, eventSource)
+        } catch (e) {
+          console.error('解析进度数据失败:', e)
+          eventSource.close()
+          reject(e)
+        }
+      }
+
+      eventSource.onerror = error => {
+        console.error('EventSource错误:', error)
+        eventSource.close()
+        reject(new Error('连接错误'))
+      }
+
+      // 5分钟超时
+      setTimeout(() => {
+        eventSource.close()
+        reject(new Error('处理超时'))
+      }, 300000)
+    })
+  }
+
+  // 简单进度处理方法（备用）
+  const handleSimpleProgress = async (fileId: string, originalName: string) => {
+    // 调用简单版本的拆分API
+    const splitResponse = await $fetch('/api/files/split-docx', {
+      method: 'POST',
+      body: {
+        fileId: fileId,
+        pagesPerFile: pagesPerFile.value,
+        originalName: originalName,
+      },
+    })
+
+    // 将文件ID添加到拆分结果中
+    splitResult.value = {
+      ...(splitResponse as any),
+      fileId: currentSplitFileId.value,
+    }
+    progressLogs.value.push('拆分完成！')
+  }
+
+  // 处理进度消息
+  const handleProgressMessage = (
+    data: any,
+    resolve: Function,
+    reject: Function,
+    eventSource: EventSource
+  ) => {
+    switch (data.type) {
+      case 'progress':
+        handleProgressUpdate(data.data)
+        break
+      case 'log':
+        progressLogs.value.push(data.data.message)
+        // 保持日志数量不超过50条
+        if (progressLogs.value.length > 50) {
+          progressLogs.value = progressLogs.value.slice(-50)
+        }
+        break
+      case 'info':
+        progressLogs.value.push(data.data.message)
+        break
+      case 'complete':
+        eventSource.close()
+        // 将文件ID添加到拆分结果中
+        splitResult.value = {
+          ...data.data,
+          fileId: currentSplitFileId.value,
+        }
+        progressLogs.value.push('拆分完成！')
+        resolve()
+        break
+      case 'error':
+        eventSource.close()
+        progressLogs.value.push('错误: ' + data.data.message)
+        reject(new Error(data.data.message))
+        break
+    }
+  }
+
+  // 处理进度更新
+  const handleProgressUpdate = (progressData: any) => {
+    switch (progressData.type) {
+      case 'total_files':
+        splitProgress.value.total = progressData.total
+        progressLogs.value.push(`总共需要拆分 ${progressData.total} 个文件`)
+        break
+      case 'file_start':
+        currentFileProgress.value.fileIndex = progressData.current
+        currentFileProgress.value.step = '开始处理'
+        currentFileProgress.value.percentage = 0
+        progressLogs.value.push(`开始处理第 ${progressData.current} 个文件`)
+        break
+      case 'file_step':
+        currentFileProgress.value.fileIndex = progressData.fileIndex
+        currentFileProgress.value.step = progressData.step
+        currentFileProgress.value.percentage = progressData.percentage
+        break
+      case 'file_complete':
+        splitProgress.value.completed = progressData.completed
+        splitProgress.value.percentage = Math.round(
+          (progressData.completed / progressData.total) * 100
+        )
+        currentFileProgress.value.percentage = 100
         progressLogs.value.push(
-          `正在打包: ${progressData.current}/${progressData.total} 个文件`
-        );
-      }
-      break;
-  }
-};
-
-// 检查内容是否包含Markdown表格
-const hasMarkdownTable = (content: string): boolean => {
-  if (!content) return false;
-  // 检查是否包含Markdown表格的特征（至少有表头分隔符）
-  return /\|.*\|/.test(content) && /[-:]+\|/.test(content);
-};
-
-// 下载修改后的Excel
-const downloadModifiedExcel = async (result: any) => {
-  if (!uploadResponse.value || !result.result?.content) {
-    message.error("缺少必要的文件信息");
-    return;
-  }
-
-  isDownloadingExcel.value = true;
-
-  try {
-    // 调用修改Excel的API
-    const response = await $fetch("/api/files/modify-excel-by-sequence", {
-      method: "POST",
-      body: {
-        originalFilePath: uploadResponse.value.path,
-        aiResult: result.result.content,
-        originalFileName:
-          uploadResponse.value.originalName ||
-          selectedFile.value?.name ||
-          "file.xlsx",
-      },
-    });
-
-    if (response.success && response.downloadUrl) {
-      // 触发下载
-      const link = document.createElement("a");
-      link.href = response.downloadUrl;
-      link.download = response.fileName || "modified.xlsx";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      message.success("Excel文件已生成，开始下载");
-    } else {
-      message.error(response.error || "生成Excel失败");
+          `完成第 ${progressData.completed} 个文件 (共 ${progressData.total} 个)`
+        )
+        break
+      case 'all_complete':
+        splitProgress.value.completed = progressData.completed
+        splitProgress.value.percentage = 100
+        currentFileProgress.value.percentage = 100
+        currentFileProgress.value.step = '所有文件拆分完成'
+        break
+      case 'zip_start':
+        currentFileProgress.value.fileIndex = 0
+        currentFileProgress.value.step = '创建ZIP文件'
+        currentFileProgress.value.percentage = 0
+        progressLogs.value.push('开始创建ZIP压缩包...')
+        break
+      case 'zip_progress':
+        currentFileProgress.value.step = `打包文件: ${progressData.fileName}`
+        currentFileProgress.value.percentage = progressData.percentage
+        if (
+          progressData.current % 5 === 0 ||
+          progressData.current === progressData.total
+        ) {
+          progressLogs.value.push(
+            `正在打包: ${progressData.current}/${progressData.total} 个文件`
+          )
+        }
+        break
     }
-  } catch (error: any) {
-    console.error("下载修改后Excel失败:", error);
-    message.error(error.message || "下载失败，请重试");
-  } finally {
-    isDownloadingExcel.value = false;
   }
-};
 
-// 下载拆分后的文件
-const downloadSplitFiles = () => {
-  if (!splitResult.value || !splitResult.value.downloadUrl) return;
+  // 检查内容是否包含Markdown表格
+  const hasMarkdownTable = (content: string): boolean => {
+    if (!content) return false
+    // 检查是否包含Markdown表格的特征（至少有表头分隔符）
+    return /\|.*\|/.test(content) && /[-:]+\|/.test(content)
+  }
 
-  // 创建下载链接
-  const link = document.createElement("a");
-  link.href = splitResult.value.downloadUrl;
-  link.download = "split_documents.zip";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+  // 下载修改后的Excel
+  const downloadModifiedExcel = async (result: any) => {
+    if (!uploadResponse.value || !result.result?.content) {
+      message.error('缺少必要的文件信息')
+      return
+    }
 
-// 通用文件下载函数
-const downloadFile = (content: string, filename: string, mimeType: string) => {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+    isDownloadingExcel.value = true
+
+    try {
+      // 调用修改Excel的API
+      const response = await $fetch('/api/files/modify-excel-by-sequence', {
+        method: 'POST',
+        body: {
+          originalFilePath: uploadResponse.value.path,
+          aiResult: result.result.content,
+          originalFileName:
+            uploadResponse.value.originalName ||
+            selectedFile.value?.name ||
+            'file.xlsx',
+        },
+      })
+
+      if (response.success && response.downloadUrl) {
+        // 触发下载
+        const link = document.createElement('a')
+        link.href = response.downloadUrl
+        link.download = response.fileName || 'modified.xlsx'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        message.success('Excel文件已生成，开始下载')
+      } else {
+        message.error(response.error || '生成Excel失败')
+      }
+    } catch (error: any) {
+      console.error('下载修改后Excel失败:', error)
+      message.error(error.message || '下载失败，请重试')
+    } finally {
+      isDownloadingExcel.value = false
+    }
+  }
+
+  // 下载拆分后的文件
+  const downloadSplitFiles = () => {
+    if (!splitResult.value || !splitResult.value.downloadUrl) return
+
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.href = splitResult.value.downloadUrl
+    link.download = 'split_documents.zip'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 </script>
